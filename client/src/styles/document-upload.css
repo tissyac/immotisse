@@ -1,0 +1,276 @@
+/* Document Upload Widget Styles - Enhanced */
+
+.document-upload-widget {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+/* Upload Label Container */
+.upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 28px 24px;
+  border: 2px dashed #3b82f6;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #f0f9ff 0%, #f0fdf4 100%);
+  position: relative;
+  overflow: hidden;
+  min-height: 100px;
+}
+
+.upload-label::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  to {
+    left: 100%;
+  }
+}
+
+.upload-label:hover {
+  background: linear-gradient(135deg, #e0f2fe 0%, #ecfdf5 100%);
+  border-color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  transform: translateY(-2px);
+}
+
+.upload-label:active {
+  transform: translateY(0);
+}
+
+.upload-label.uploading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.upload-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.upload-label:hover .upload-icon {
+  animation: bounce 0.6s infinite;
+}
+
+.upload-text {
+  font-weight: 600;
+  color: #1d4ed8;
+  flex: 1;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.file-input {
+  display: none;
+}
+
+/* File Info Message */
+.file-info {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #ecfdf5;
+  border-left: 4px solid #10b981;
+  border-radius: 8px;
+  color: #047857;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.file-info::before {
+  content: '✓';
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* Uploading State */
+.uploading {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: pulse 2s infinite;
+}
+
+.uploading::before {
+  content: '⏳';
+  font-size: 1rem;
+  flex-shrink: 0;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Messages */
+.message {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.message.success {
+  background: #ecfdf5;
+  border-left: 4px solid #10b981;
+  color: #047857;
+}
+
+.message.success::before {
+  content: '✓';
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.message.error {
+  background: #fee2e2;
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+}
+
+.message.error::before {
+  content: '✕';
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* Error Details */
+details {
+  margin-top: 8px;
+  padding: 10px;
+  background: #fef2f2;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+  font-size: 0.85rem;
+}
+
+details summary {
+  cursor: pointer;
+  user-select: none;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+details summary:hover {
+  color: #7f1d1d;
+}
+
+details pre {
+  margin: 8px 0 0 0;
+  padding: 8px;
+  background: white;
+  border-radius: 4px;
+  overflow: auto;
+  max-height: 150px;
+  font-size: 0.75rem;
+  color: #374151;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .upload-label {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px 16px;
+    min-height: auto;
+  }
+
+  .upload-text {
+    text-align: center;
+    font-size: 0.9rem;
+  }
+
+  .upload-icon {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-label {
+    padding: 16px 12px;
+    gap: 12px;
+  }
+
+  .upload-icon {
+    font-size: 1.5rem;
+  }
+
+  .upload-text {
+    font-size: 0.85rem;
+  }
+
+  .file-info,
+  .uploading,
+  .message {
+    font-size: 0.9rem;
+    padding: 10px 12px;
+  }
+}
+
+  .upload-text {
+    font-size: 0.9rem;
+  }
+}

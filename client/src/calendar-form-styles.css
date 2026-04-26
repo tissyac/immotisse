@@ -1,0 +1,161 @@
+/* Styling pour le formulaire de gestion du calendrier */
+.availability-form-container {
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  margin: 20px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.availability-form-container h3 {
+  margin: 0 0 16px 0;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.availability-form-container h4 {
+  margin: 16px 0 12px 0;
+  color: #334155;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.date-input-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.date-input-group > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 150px;
+}
+
+.date-input-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.date-input-group input {
+  padding: 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.date-input-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.date-input-group input:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.add-period-btn {
+  padding: 10px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.add-period-btn:hover:not(:disabled) {
+  background: #059669;
+}
+
+.add-period-btn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.periods-list {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border-left: 4px solid #10b981;
+}
+
+.period-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+
+.period-item:last-child {
+  margin-bottom: 0;
+}
+
+.period-dates {
+  font-weight: 500;
+  color: #047857;
+  flex: 1;
+}
+
+.remove-period-btn {
+  padding: 6px 10px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.remove-period-btn:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+.remove-period-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.empty-periods {
+  color: #94a3b8;
+  font-style: italic;
+  margin: 8px 0 0 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .date-input-group {
+    flex-direction: column;
+  }
+
+  .date-input-group > div {
+    min-width: unset;
+  }
+
+  .period-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .remove-period-btn {
+    align-self: flex-end;
+  }
+}
