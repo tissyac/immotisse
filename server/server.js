@@ -25,9 +25,32 @@ initEmailService();
 app.use('/uploads', express.static('uploads'));
 
 // connexion MongoDB
-mongoose.connect(process.env.MONGODB_URI || "mongodb://immotiss:immotiss@ac-vghjhak-shard-00-00.y1f6snf.mongodb.net:27017,ac-vghjhak-shard-00-01.y1f6snf.mongodb.net:27017,ac-vghjhak-shard-00-02.y1f6snf.mongodb.net:27017/?ssl=true&replicaSet=atlas-686yp3-shard-0&authSource=admin&appName=Cluster0")
-.then(() => console.log("MongoDB connecté ✅"))
-.catch(err => console.log(err));
+const MONGODB_URI = process.env.MONGODB_URI;
+const FALLBACK_URI = process.env.FALLBACK_MONGODB_URI || 'mongodb://127.0.0.1:27017/immotisse';
+
+const connectMongo = async () => {
+  try {
+    await mongoose.connect(MONGODB_URI || FALLBACK_URI);
+    console.log('MongoDB connecté ✅');
+  } catch (primaryError) {
+    console.warn('Connexion MongoDB principale échouée :', primaryError.message);
+    if (MONGODB_URI && MONGODB_URI !== FALLBACK_URI) {
+      try {
+        console.log('Tentative de connexion à MongoDB local...');
+        await mongoose.connect(FALLBACK_URI);
+        console.log('MongoDB local connecté ✅');
+      } catch (fallbackError) {
+        console.error('Échec de la connexion locale MongoDB :', fallbackError.message);
+        process.exit(1);
+      }
+    } else {
+      console.error('Aucune URI MongoDB valide trouvée.');
+      process.exit(1);
+    }
+  }
+};
+
+connectMongo();
 
 // route test
 app.get('/', (req, res) => {
