@@ -13,12 +13,26 @@ const userSchema = new mongoose.Schema({
 
   // Information entreprise
   companyName: { type: String, required: true },
+  companyType: { type: String, enum: ['promoteur', 'agence', 'bureau d\'affaires'], default: 'promoteur' },
   companyAddress: { type: String, required: true },
   companyLocation: { type: String }, // option géolocalisation
   companyPhone: { type: String, required: true },
   companyEmail: { type: String, required: true, unique: true },
   rcNumber: { type: String },
   rcDocument: { type: String }, // URL du fichier uploadé
+  pendingProfile: {
+    companyName: { type: String },
+    companyType: { type: String, enum: ['promoteur', 'agence', 'bureau d\'affaires'] },
+    companyEmail: { type: String },
+    name: { type: String },
+    firstName: { type: String },
+    companyPhone: { type: String },
+    companyAddress: { type: String },
+    rcNumber: { type: String },
+    iceNumber: { type: String }
+  },
+  pendingProfileStatus: { type: String, enum: ['none', 'pending'], default: 'none' },
+  pendingProfileRequestedAt: { type: Date },
   hasAgreement: { type: Boolean, default: false },
 
   // Login / statut

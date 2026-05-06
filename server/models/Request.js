@@ -12,6 +12,7 @@ const requestSchema = new mongoose.Schema({
   phone: String,
 
   companyName: String,
+  companyType: { type: String, enum: ['promoteur', 'agence', 'bureau d\'affaires'], default: 'promoteur' },
   companyAddress: String,
   companyLocation: String,
   companyPhone: String,

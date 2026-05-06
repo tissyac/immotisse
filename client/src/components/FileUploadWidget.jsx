@@ -25,12 +25,14 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
           body: formData
         });
 
+        const data = await res.json();
+
         if (res.ok) {
-          const data = await res.json();
           onFileUploaded(data.fileUrl);
           setMessage(`✅ ${file.name} uploadé avec succès`);
         } else {
-          setMessage(`❌ Erreur lors de l'upload de ${file.name}`);
+          const errorMsg = data.message || 'Erreur lors de l\'upload';
+          setMessage(`❌ Erreur: ${errorMsg}`);
         }
       } catch (err) {
         setMessage(`❌ ${err.message}`);

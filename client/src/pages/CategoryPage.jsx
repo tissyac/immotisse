@@ -32,16 +32,60 @@ function CategoryPage() {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isSearch, setIsSearch] = useState(false);
+  const [searchParams, setSearchParams] = useState({});
 
   useEffect(() => {
-    if ((category === 'vente' || category === 'location') && !subcategory) {
-      setOffers([]);
-      setLoading(false);
-      setError('');
-      return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const isSearchRoute = window.location.pathname === '/category/search';
+    
+    if (isSearchRoute) {
+      setIsSearch(true);
+      const params = {};
+      for (let [key, value] of urlParams) {
+        params[key] = value;
+      }
+      setSearchParams(params);
+      loadSearchResults(params);
+    } else {
+      setIsSearch(false);
+      if ((category === 'vente' || category === 'location') && !subcategory) {
+        setOffers([]);
+        setLoading(false);
+        setError('');
+        return;
+      }
+      loadOffers();
     }
-    loadOffers();
   }, [category, subcategory]);
+
+  const loadSearchResults = async (params) => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      let queryString = 'status=approved';
+      if (params.mainCategory) queryString += `&mainCategory=${params.mainCategory}`;
+      if (params.city) queryString += `&city=${params.city}`;
+      if (params.search) queryString += `&search=${params.search}`;
+      
+      const response = await fetch(`http://localhost:3008/offers?${queryString}&limit=50`);
+      const data = await response.json();
+      
+      if (!data.offers) {
+        setError('Aucune offre trouvée pour ces critères.');
+        setOffers([]);
+        return;
+      }
+      
+      setOffers(data.offers);
+    } catch (err) {
+      console.error(err);
+      setError('Erreur lors de la recherche.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadOffers = async () => {
     try {
@@ -119,7 +163,60 @@ function CategoryPage() {
 
   return (
     <div className="category-page-container">
-      {category === 'vente' && !subcategory ? (
+      {isSearch ? (
+        <>
+          <section className="section hero-section">
+            <h2>Résultats de recherche</h2>
+            <p>
+              {searchParams.mainCategory && `Catégorie: ${categoryLabels[searchParams.mainCategory] || searchParams.mainCategory}`}
+              {searchParams.city && ` - Ville: ${searchParams.city}`}
+              {searchParams.search && ` - Recherche: ${searchParams.search}`}
+            </p>
+            <Link className="back-link" to="/">
+              ← Retour à l'accueil
+            </Link>
+          </section>
+
+          <section className="section">
+            {loading ? (
+              <div className="loading">Recherche en cours...</div>
+            ) : error ? (
+              <div className="alert error">{error}</div>
+            ) : offers.length === 0 ? (
+              <div className="no-offers">
+                <p>Aucune offre trouvée pour ces critères de recherche.</p>
+              </div>
+            ) : (
+              <>
+                <div className="offers-header">
+                  <div className="offers-count">
+                    <strong>{offers.length}</strong> offre{offers.length > 1 ? 's' : ''} trouvée{offers.length > 1 ? 's' : ''}
+                  </div>
+                </div>
+                <div className="offers-grid">
+                  {offers.map((offer) => (
+                    <Link key={offer._id} to={`/offer/${offer._id}`} className="offer-card">
+                      <div className="offer-image">
+                        {offer.images && offer.images.length > 0 ? (
+                          <img src={`http://localhost:3008${offer.images[0]}`} alt={offer.title} />
+                        ) : (
+                          <div className="no-image">📷</div>
+                        )}
+                      </div>
+                      <div className="offer-content">
+                        <p className="offer-price">
+                          {offer.price ? `${offer.price.toLocaleString()} DA` : 'Prix sur demande'}
+                        </p>
+                        <div className="offer-address">📍 {offer.address || offer.city || 'Adresse non spécifiée'}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
+        </>
+      ) : category === 'vente' && !subcategory ? (
         renderVenteSubcategories()
       ) : category === 'location' && !subcategory ? (
         renderLocationSubcategories()
@@ -179,20 +276,11 @@ function CategoryPage() {
                       ) : (
                         <div className="no-image">📸</div>
                       )}
-                      <div className="offer-badge">
-                        {categoryLabels[offer.mainCategory]}
-                      </div>
                     </div>
 
                     <div className="offer-content">
-                      {offer.price && (
-                        <div className="offer-price">
-                          💰 {offer.price.toLocaleString()} FCFA
-                        </div>
-                      )}
-                      <div className="offer-location">
-                        <span className="location-icon">📍</span>
-                        <span className="location-text">{offer.city || offer.address || 'Adresse non précisée'}</span>
+                      <div className="offer-price">
+                        💰 {offer.price ? `${offer.price.toLocaleString()} FCFA` : 'Prix sur demande'}
                       </div>
                       <div className="offer-details">
                         {offer.mainCategory === 'promotion' && (
@@ -257,6 +345,10 @@ function CategoryPage() {
                             <span className="detail-text">{offer.area} m²</span>
                           </div>
                         )}
+                      </div>
+                      <div className="offer-address">
+                        <span className="location-icon">📍</span>
+                        <span className="location-text">{offer.address || offer.city || 'Adresse non précisée'}</span>
                       </div>
                     </div>
                   </Link>

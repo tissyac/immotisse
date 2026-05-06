@@ -13,6 +13,7 @@ function Signup() {
     nin: '',
     ninDocument: '',
     companyName: '',
+    companyType: 'promoteur',
     companyPhone: '',
     companyAddress: '',
     companyLocation: '',
@@ -124,6 +125,7 @@ function Signup() {
       nin: '',
       ninDocument: '',
       companyName: '',
+      companyType: 'promoteur',
       companyPhone: '',
       companyAddress: '',
       companyLocation: '',
@@ -268,6 +270,18 @@ function Signup() {
                     required
                   />
                 </div>
+                <div className="form-group">
+                  <label>
+                    Type d'entreprise <span className="required">*</span>
+                  </label>
+                  <select value={form.companyType} onChange={update('companyType')} required>
+                    <option value="promoteur">Promoteur</option>
+                    <option value="agence">Agence</option>
+                    <option value="bureau d'affaires">Bureau d'affaires</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-grid">
                 <div className="form-group">
                   <label>
                     Téléphone entreprise <span className="required">*</span>

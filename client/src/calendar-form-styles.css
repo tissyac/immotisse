@@ -159,3 +159,110 @@
     align-self: flex-end;
   }
 }
+
+/* Nouveaux styles pour la sélection de période */
+.selection-summary {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.selection-summary h4 {
+  margin: 0 0 12px 0;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.date-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.date-inputs .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.date-inputs label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.date-inputs input {
+  padding: 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.date-inputs input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.selection-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.add-period-btn,
+.clear-selection-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.add-period-btn {
+  background: #10b981;
+  color: white;
+}
+
+.add-period-btn:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.clear-selection-btn {
+  background: #f59e0b;
+  color: white;
+}
+
+.clear-selection-btn:hover:not(:disabled) {
+  background: #d97706;
+  transform: translateY(-1px);
+}
+
+.add-period-btn:disabled,
+.clear-selection-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 640px) {
+  .date-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .selection-actions {
+    flex-direction: column;
+  }
+
+  .selection-actions button {
+    width: 100%;
+  }
+}

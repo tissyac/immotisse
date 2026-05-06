@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ClientMessageForm from '../components/ClientMessageForm';
+import CalendarGrid from '../components/CalendarGrid';
+import '../calendar-styles.css';
 import './OfferDetails.css';
 
 const categoryLabels = {
@@ -70,9 +72,6 @@ function OfferDetails() {
     return 'Non renseigné';
   };
 
-  const [requestStart, setRequestStart] = useState('');
-  const [requestEnd, setRequestEnd] = useState('');
-  const [availabilityMessage, setAvailabilityMessage] = useState('');
   const [showContactForm, setShowContactForm] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -102,20 +101,6 @@ function OfferDetails() {
     }
   }, [offer?.images, offer?.videos]);
 
-  const isPeriodAvailable = (start, end) => {
-    const requestStartDate = new Date(start);
-    const requestEndDate = new Date(end);
-    if (isNaN(requestStartDate) || isNaN(requestEndDate) || requestStartDate > requestEndDate) {
-      return null;
-    }
-
-    return !offer.availabilityCalendar?.some((reserved) => {
-      const reservedStart = new Date(reserved.startDate);
-      const reservedEnd = new Date(reserved.endDate);
-      return requestStartDate <= reservedEnd && requestEndDate >= reservedStart;
-    });
-  };
-
   const previousImage = () => {
     if (imageItems.length === 0) return;
     setCurrentImageIndex((prev) => (prev === 0 ? imageItems.length - 1 : prev - 1));
@@ -136,61 +121,17 @@ function OfferDetails() {
     setCurrentVideoIndex((prev) => (prev === videoItems.length - 1 ? 0 : prev + 1));
   };
 
-  const checkAvailability = () => {
-    if (!requestStart || !requestEnd) {
-      setAvailabilityMessage('Veuillez sélectionner une période pour vérifier la disponibilité.');
-      return;
-    }
-
-    const available = isPeriodAvailable(requestStart, requestEnd);
-    if (available === null) {
-      setAvailabilityMessage('La plage choisie est invalide.');
-      return;
-    }
-
-    setAvailabilityMessage(available ? '✅ Période disponible' : '❌ Période déjà réservée');
-  };
-
   const renderAvailabilityCalendar = () => {
+    const reservedPeriods = offer.availabilityCalendar || [];
+
     return (
       <div className="availability-calendar">
-        <h3>📅 Calendrier des réservations</h3>
-        {offer.availabilityCalendar && offer.availabilityCalendar.length > 0 ? (
-          <>
-            <div className="availability-list">
-              {offer.availabilityCalendar.map((period, idx) => (
-                <div key={idx} className="availability-period reserved">
-                  <span className="period-date">
-                    {new Date(period.startDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                  </span>
-                  <span className="period-arrow">→</span>
-                  <span className="period-date">
-                    {new Date(period.endDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
-                  <span className="period-status">Réservé</span>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <p>Aucune période réservée n'a encore été renseignée.</p>
-        )}
-
-        <div className="check-availability-panel">
-          <h4>Vérifier une date</h4>
-          <div className="date-input-group">
-            <div>
-              <label>Date de début</label>
-              <input type="date" value={requestStart} onChange={(e) => setRequestStart(e.target.value)} />
-            </div>
-            <div>
-              <label>Date de fin</label>
-              <input type="date" value={requestEnd} onChange={(e) => setRequestEnd(e.target.value)} />
-            </div>
-            <button type="button" onClick={checkAvailability}>Vérifier</button>
-          </div>
-          {availabilityMessage && <div className="availability-message">{availabilityMessage}</div>}
-        </div>
+        <h3>📅 Calendrier des disponibilités</h3>
+        <p className="availability-info">Les dates en rouge sont réservées, les autres sont disponibles.</p>
+        <CalendarGrid
+          reservedPeriods={reservedPeriods}
+          readOnly={true}
+        />
       </div>
     );
   };
@@ -348,67 +289,46 @@ function OfferDetails() {
     if (offer.mainCategory === 'location') {
       if (offer.subCategory === 'courte_duree') {
         return (
-          <div className="char-grid">
-            {offer.description && (
-              <div className="char-box">
-                <div className="char-icon">📝</div>
-                <div className="char-content">
-                  <span className="char-label">Description</span>
-                  <span className="char-value">{offer.description}</span>
+          <div className="details-stack">
+            {offer.propertyType && (
+              <div className="detail-card">
+                <div className="detail-card-icon">🏠</div>
+                <div>
+                  <div className="detail-card-label">Type de bien</div>
+                  <div className="detail-card-value">{offer.propertyType}</div>
                 </div>
               </div>
             )}
 
-            {offer.address && (
-              <div className="char-box">
-                <div className="char-icon">📍</div>
-                <div className="char-content">
-                  <span className="char-label">Adresse</span>
-                  <span className="char-value">{offer.address}</span>
+            {offer.price && (
+              <div className="detail-card">
+                <div className="detail-card-icon">💰</div>
+                <div>
+                  <div className="detail-card-label">Prix</div>
+                  <div className="detail-card-value">{offer.price} {offer.currency || 'FCFA'}</div>
                 </div>
               </div>
             )}
 
             {offer.area && (
-              <div className="char-box">
-                <div className="char-icon">📐</div>
-                <div className="char-content">
-                  <span className="char-label">Superficie</span>
-                  <span className="char-value">{offer.area} m²</span>
-                </div>
-              </div>
-            )}
-
-            {offer.propertyType && (
-              <div className="char-box">
-                <div className="char-icon">🏠</div>
-                <div className="char-content">
-                  <span className="char-label">Type de bien</span>
-                  <span className="char-value">{offer.propertyType}</span>
-                </div>
-              </div>
-            )}
-
-            {offer.apartmentTypes && offer.apartmentTypes.length > 0 && (
-              <div className="char-box">
-                <div className="char-icon">🏘️</div>
-                <div className="char-content">
-                  <span className="char-label">Type d'appartement</span>
-                  <span className="char-value">{offer.apartmentTypes.join(', ')}</span>
+              <div className="detail-card">
+                <div className="detail-card-icon">📐</div>
+                <div>
+                  <div className="detail-card-label">Superficie</div>
+                  <div className="detail-card-value">{offer.area} m²</div>
                 </div>
               </div>
             )}
 
             {offer.equipment && offer.equipment.length > 0 && (
-              <div className="char-box">
-                <div className="char-icon">🛋️</div>
-                <div className="char-content">
-                  <span className="char-label">Équipements</span>
-                  <span className="char-value">{offer.equipment.join(', ')}</span>
+              <div className="detail-card">
+                <div className="detail-card-icon">🛋️</div>
+                <div>
+                  <div className="detail-card-label">Équipements</div>
+                  <div className="detail-card-value">{Array.isArray(offer.equipment) ? offer.equipment.join(', ') : offer.equipment}</div>
                 </div>
               </div>
             )}
-
           </div>
         );
       } else if (offer.subCategory === 'longue_duree') {
@@ -420,16 +340,6 @@ function OfferDetails() {
                 <div>
                   <div className="detail-card-label">Description</div>
                   <div className="detail-card-value">{offer.description}</div>
-                </div>
-              </div>
-            )}
-
-            {offer.address && (
-              <div className="detail-card">
-                <div className="detail-card-icon">📍</div>
-                <div>
-                  <div className="detail-card-label">Adresse</div>
-                  <div className="detail-card-value">{offer.address}</div>
                 </div>
               </div>
             )}
@@ -924,7 +834,7 @@ function OfferDetails() {
             </section>
           ) : (
             <>
-              {offer.description && (
+              {offer.description && offer.subCategory !== 'longue_duree' && (
                 <section className="section description-section">
                   <h2>📝 Description</h2>
                   <p className="description-text">{offer.description}</p>
@@ -942,8 +852,8 @@ function OfferDetails() {
 
           {/* CTA */}
           <section className="section cta-section">
-            <button className="contact-cta" onClick={() => setShowContactForm(true)}>
-              📞 Contacter IMMOTISSE
+            <button className="contact-cta" onClick={() => setShowContactForm(prev => !prev)}>
+              {showContactForm ? '✕ Fermer le formulaire' : '📞 Contacter IMMOTISSE'}
             </button>
           </section>
 

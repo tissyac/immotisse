@@ -53,7 +53,7 @@ router.get('/received', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
     const messages = await Message.find({ recipient: userId })
-      .populate('sender', 'companyName name firstName companyEmail')
+      .populate('sender', 'companyName name firstName companyEmail companyPhone phone')
       .populate('relatedOffer', 'title')
       .sort({ createdAt: -1 });
 
@@ -69,7 +69,7 @@ router.get('/sent', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
     const messages = await Message.find({ sender: userId })
-      .populate('recipient', 'companyName name firstName companyEmail')
+      .populate('recipient', 'companyName name firstName companyEmail companyPhone phone')
       .populate('relatedOffer', 'title')
       .sort({ createdAt: -1 });
 
@@ -107,8 +107,8 @@ router.put('/:id/read', authMiddleware, async (req, res) => {
 router.get('/admin/all', adminMiddleware, async (req, res) => {
   try {
     const messages = await Message.find()
-      .populate('sender', 'companyName name firstName companyEmail')
-      .populate('recipient', 'companyName name firstName companyEmail')
+      .populate('sender', 'companyName name firstName companyEmail companyPhone phone')
+      .populate('recipient', 'companyName name firstName companyEmail companyPhone phone')
       .populate('relatedOffer', 'title')
       .sort({ createdAt: -1 });
 

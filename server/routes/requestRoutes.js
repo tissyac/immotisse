@@ -6,6 +6,7 @@ const Request = require('../models/Request');
 const User = require('../models/User');
 const { sendApprovalEmail, sendRequestRejectionEmail } = require('../services/emailService');
 const { adminMiddleware } = require('../middleware/authMiddleware');
+const { logAction } = require('../services/auditService');
 
 // POST : envoyer une demande
 router.post('/', async (req, res) => {
@@ -52,6 +53,7 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
       ninDocument: request.ninDocument,
       phone: request.phone,
       companyName: request.companyName,
+      companyType: request.companyType || 'promoteur',
       companyAddress: request.companyAddress,
       companyLocation: request.companyLocation,
       companyPhone: request.companyPhone,
@@ -66,6 +68,12 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
     request.status = 'approved';
     request.adminNote = adminNote || 'Approuvée par l\'administration';
     await request.save();
+
+    // Audit log
+    await logAction('approve', 'request', request._id, req.user.userId, {
+      status: 'approved',
+      notes: request.adminNote
+    });
 
     // Envoyer un email
     const emailResult = await sendApprovalEmail(request.companyEmail, request.companyEmail, generatedPassword, request.companyName);
@@ -97,6 +105,12 @@ router.post('/:id/reject', adminMiddleware, async (req, res) => {
     request.status = 'rejected';
     request.adminNote = adminNote || 'Rejetée par l\'administration';
     await request.save();
+
+    // Audit log
+    await logAction('reject', 'request', request._id, req.user.userId, {
+      status: 'rejected',
+      notes: request.adminNote
+    });
 
     const emailResult = await sendRequestRejectionEmail(request.companyEmail, request.companyName, request.adminNote);
     if (!emailResult.success) {

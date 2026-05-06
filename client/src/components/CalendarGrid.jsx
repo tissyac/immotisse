@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 
-function CalendarGrid({ reservedPeriods = [], onDateSelect, selectedStart, selectedEnd, disabled = false }) {
+function CalendarGrid({ reservedPeriods = [], disabled = false, readOnly = false, onDateSelect }) {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [tempStart, setTempStart] = useState(selectedStart);
-  const [tempEnd, setTempEnd] = useState(selectedEnd);
+  const [tempStart, setTempStart] = useState(null);
+  const [tempEnd, setTempEnd] = useState(null);
 
   const monthNames = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -30,51 +30,27 @@ function CalendarGrid({ reservedPeriods = [], onDateSelect, selectedStart, selec
     });
   };
 
-  const isDateInRange = (date) => {
-    if (!tempStart || !tempEnd) return false;
-    const checkDate = new Date(date);
-    const start = new Date(tempStart);
-    const end = new Date(tempEnd);
-    return checkDate >= start && checkDate <= end;
-  };
-
-  const isDateSelected = (date) => {
-    const checkDate = new Date(date);
-    if (tempStart && new Date(tempStart).toDateString() === checkDate.toDateString()) return 'start';
-    if (tempEnd && new Date(tempEnd).toDateString() === checkDate.toDateString()) return 'end';
-    return false;
-  };
-
   const handleDateClick = (day) => {
-    if (disabled) return;
+    if (readOnly || disabled || !onDateSelect) return;
 
-    const clickedDate = new Date(currentYear, currentMonth, day);
-    const dateStr = clickedDate.toISOString().split('T')[0];
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
     if (!tempStart || (tempStart && tempEnd)) {
-      // Nouvelle sélection
       setTempStart(dateStr);
       setTempEnd(null);
-    } else {
-      // Fin de sélection
-      if (new Date(dateStr) < new Date(tempStart)) {
-        setTempEnd(tempStart);
-        setTempStart(dateStr);
-      } else {
-        setTempEnd(dateStr);
-      }
+      return;
     }
-  };
 
-  const confirmSelection = () => {
-    if (tempStart && tempEnd) {
-      onDateSelect(tempStart, tempEnd);
+    if (tempStart && !tempEnd) {
+      const start = new Date(tempStart);
+      const end = new Date(dateStr);
+      const finalStart = start <= end ? tempStart : dateStr;
+      const finalEnd = start <= end ? dateStr : tempStart;
+
+      onDateSelect(finalStart, finalEnd);
+      setTempStart(null);
+      setTempEnd(null);
     }
-  };
-
-  const clearSelection = () => {
-    setTempStart(null);
-    setTempEnd(null);
   };
 
   const nextMonth = () => {
@@ -110,26 +86,23 @@ function CalendarGrid({ reservedPeriods = [], onDateSelect, selectedStart, selec
     // Jours du mois
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentYear, currentMonth, day);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const isToday = date.toDateString() === today.toDateString();
-      const isPast = date < today && !isToday;
       const reserved = isDateReserved(dateStr);
-      const inRange = isDateInRange(dateStr);
-      const selected = isDateSelected(dateStr);
+      const selected = tempStart && tempEnd && dateStr >= tempStart && dateStr <= tempEnd;
+      const selectingStart = tempStart && !tempEnd && dateStr === tempStart;
 
       let className = 'calendar-day';
       if (isToday) className += ' today';
-      if (isPast) className += ' past';
-      if (reserved) className += ' reserved';
-      if (inRange) className += ' in-range';
-      if (selected === 'start') className += ' selected-start';
-      if (selected === 'end') className += ' selected-end';
+      className += reserved ? ' reserved' : ' available';
+      if (selected) className += ' selected';
+      if (selectingStart) className += ' selecting';
 
       days.push(
         <div
           key={day}
           className={className}
-          onClick={() => !isPast && !reserved && handleDateClick(day)}
+          onClick={() => handleDateClick(day)}
         >
           {day}
         </div>
@@ -140,9 +113,9 @@ function CalendarGrid({ reservedPeriods = [], onDateSelect, selectedStart, selec
   };
 
   useEffect(() => {
-    setTempStart(selectedStart);
-    setTempEnd(selectedEnd);
-  }, [selectedStart, selectedEnd]);
+    setTempStart(null);
+    setTempEnd(null);
+  }, [currentMonth, currentYear]);
 
   return (
     <div className="calendar-grid-container">
@@ -168,28 +141,7 @@ function CalendarGrid({ reservedPeriods = [], onDateSelect, selectedStart, selec
           <div className="legend-color reserved"></div>
           <span>Réservé</span>
         </div>
-        <div className="legend-item">
-          <div className="legend-color selected"></div>
-          <span>Sélectionné</span>
-        </div>
       </div>
-
-      {(tempStart || tempEnd) && (
-        <div className="calendar-actions">
-          <div className="selection-info">
-            {tempStart && <span>Début: {new Date(tempStart).toLocaleDateString('fr-FR')}</span>}
-            {tempEnd && <span>Fin: {new Date(tempEnd).toLocaleDateString('fr-FR')}</span>}
-          </div>
-          <div className="action-buttons">
-            <button onClick={confirmSelection} disabled={!tempStart || !tempEnd || disabled}>
-              Confirmer
-            </button>
-            <button onClick={clearSelection} disabled={disabled}>
-              Effacer
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -25,6 +25,7 @@ router.post('/', async (req, res) => {
         admin.companyEmail,
         req.body.name || 'Client',
         req.body.email || 'Non renseigné',
+        req.body.subject || 'Nouveau message client',
         req.body.message || '',
         req.body.phone || '',
         offerTitle
@@ -41,7 +42,9 @@ router.post('/', async (req, res) => {
 // GET : voir tous les messages de contact (admin)
 router.get('/', async (req, res) => {
   try {
-    const contacts = await Contact.find().sort({ createdAt: -1 });
+    const contacts = await Contact.find()
+      .populate('offer', 'title')
+      .sort({ createdAt: -1 });
     res.json(contacts);
   } catch (error) {
     console.log(error);

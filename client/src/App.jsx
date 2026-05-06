@@ -38,13 +38,12 @@ function AppContent() {
             </>
           ) : (
             <>
-              <span style={{ color: 'white', marginLeft: 16 }}>Bonjour {user.companyName || user.name}</span>
               {user.role === 'admin' ? (
                 <>
                   <Link to="/admin">Dashboard</Link>
                 </>
               ) : (
-                <Link to="/promoter">Espace Promoteur</Link>
+                <Link to="/promoter">Espace Entreprise</Link>
               )}
               <button style={{ marginLeft: 10, padding: '8px 12px' }} onClick={handleLogout}>
                 Déconnexion
@@ -57,6 +56,7 @@ function AppContent() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/category/search" element={<CategoryPage />} />
           <Route path="/category/:category" element={<CategoryPage />} />
           <Route path="/category/:category/:subcategory" element={<CategoryPage />} />
           <Route path="/offer/:id" element={<OfferDetails />} />

@@ -182,7 +182,7 @@ function Home() {
                   {(offer.mainCategory === 'vente' && (offer.subCategory === 'maison' || offer.subCategory === 'locaux_commerciaux')) ||
                    (offer.mainCategory === 'location' && offer.subCategory === 'longue_duree') ? (
                     <>
-                      <div className="offer-address">📍 {offer.address || 'Adresse non spécifiée'}</div>
+                      <div className="offer-address">📍 {offer.address || offer.city || 'Adresse non spécifiée'}</div>
                       <div className="offer-description">📝 {offer.description ? offer.description.slice(0, 50) + '...' : 'Description non disponible'}</div>
                       {offer.subCategory === 'maison' ? (
                         <div className="offer-type">🏠 {offer.propertyType || 'Type non spécifié'}</div>
@@ -194,7 +194,7 @@ function Home() {
                     </>
                   ) : (
                     <>
-                      <div className="offer-address">📍 {offer.city || 'Adresse non spécifiée'}</div>
+                      <div className="offer-address">📍 {offer.address || offer.city || 'Adresse non spécifiée'}</div>
                       <div className="offer-type">🏠 {offer.propertyType || 'Type non spécifié'}</div>
                     </>
                   )}

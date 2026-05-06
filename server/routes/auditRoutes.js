@@ -38,12 +38,25 @@ router.get('/stats/overview', adminMiddleware, async (req, res) => {
     const Audit = require('../models/Audit');
     
     const totalActions = await Audit.countDocuments();
-    const actionCounts = await Audit.aggregate([
+    
+    const actionCountsArray = await Audit.aggregate([
       { $group: { _id: '$action', count: { $sum: 1 } } }
     ]);
-    const entityCounts = await Audit.aggregate([
+    
+    const entityCountsArray = await Audit.aggregate([
       { $group: { _id: '$entity', count: { $sum: 1 } } }
     ]);
+    
+    // Transformer les arrays en objets
+    const actionCounts = {};
+    actionCountsArray.forEach(item => {
+      actionCounts[item._id || 'unknown'] = item.count;
+    });
+    
+    const entityCounts = {};
+    entityCountsArray.forEach(item => {
+      entityCounts[item._id || 'unknown'] = item.count;
+    });
 
     // Derniers 10 jours
     const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);

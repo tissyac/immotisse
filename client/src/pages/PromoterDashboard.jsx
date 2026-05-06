@@ -48,14 +48,50 @@ function PromoterDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [stats, setStats] = useState({ total: 0, approved: 0, pending: 0, rejected: 0, drafts: 0, views: 0, interactions: 0 });
   const [messages, setMessages] = useState([]);
+  const [sentMessages, setSentMessages] = useState([]);
   const [messageStats, setMessageStats] = useState({ sent: 0, received: 0, unread: 0 });
+  const [selectedMailbox, setSelectedMailbox] = useState('inbox');
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [companyMessage, setCompanyMessage] = useState({ subject: '', content: '' });
   const [companyMessageStatus, setCompanyMessageStatus] = useState('');
+  const [profileInfo, setProfileInfo] = useState({
+    companyName: '',
+    companyType: 'promoteur',
+    companyEmail: '',
+    name: '',
+    firstName: '',
+    companyPhone: '',
+    companyAddress: '',
+    rcNumber: '',
+    iceNumber: '',
+    status: '',
+    role: '',
+    createdAt: ''
+  });
+  const [profileDraft, setProfileDraft] = useState({
+    companyName: '',
+    companyType: 'promoteur',
+    companyEmail: '',
+    name: '',
+    firstName: '',
+    companyPhone: '',
+    companyAddress: '',
+    rcNumber: '',
+    iceNumber: ''
+  });
+  const [pendingProfileStatus, setPendingProfileStatus] = useState('none');
+  const [pendingProfileRequestedAt, setPendingProfileRequestedAt] = useState(null);
+  const [profileStatus, setProfileStatus] = useState('');
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordStatus, setPasswordStatus] = useState('');
+  const [accountSettings, setAccountSettings] = useState({ emailAlerts: true, publicProfile: false, smsNotifications: false });
+  const [settingsStatus, setSettingsStatus] = useState('');
 
   useEffect(() => {
     if (user && token) {
       loadOffers();
       loadMessages();
+      loadUserProfile();
     }
   }, [user, token, page]);
 
@@ -88,6 +124,159 @@ function PromoterDashboard() {
     setNotifications(recentNotifications);
   }, [offers]);
 
+  const loadUserProfile = async () => {
+    try {
+      const res = await fetch('http://localhost:3008/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Impossible de charger le profil');
+      const data = await res.json();
+      const currentProfile = {
+        companyName: data.companyName || '',
+        companyType: data.companyType || 'promoteur',
+        companyEmail: data.companyEmail || '',
+        name: data.name || '',
+        firstName: data.firstName || '',
+        companyPhone: data.companyPhone || '',
+        companyAddress: data.companyAddress || '',
+        rcNumber: data.rcNumber || '',
+        iceNumber: data.iceNumber || '',
+        status: data.status || '',
+        role: data.role || '',
+        createdAt: data.createdAt || ''
+      };
+      setProfileInfo(currentProfile);
+
+      const draftProfile = data.pendingProfileStatus === 'pending' && data.pendingProfile
+        ? { ...currentProfile, ...data.pendingProfile }
+        : currentProfile;
+      setProfileDraft(draftProfile);
+      setPendingProfileStatus(data.pendingProfileStatus || 'none');
+      setPendingProfileRequestedAt(data.pendingProfileRequestedAt ? new Date(data.pendingProfileRequestedAt) : null);
+    } catch (error) {
+      console.warn('Profil non chargé :', error.message);
+      if (user) {
+        const fallbackProfile = {
+          companyName: user.companyName || '',
+          companyType: user.companyType || 'promoteur',
+          companyEmail: user.companyEmail || '',
+          name: user.name || '',
+          firstName: user.firstName || '',
+          companyPhone: user.companyPhone || '',
+          companyAddress: user.companyAddress || '',
+          rcNumber: user.rcNumber || '',
+          iceNumber: user.iceNumber || '',
+          status: user.status || '',
+          role: user.role || '',
+          createdAt: user.createdAt || ''
+        };
+        setProfileInfo(fallbackProfile);
+        setProfileDraft(fallbackProfile);
+        setPendingProfileStatus('none');
+        setPendingProfileRequestedAt(null);
+      }
+    }
+  };
+
+  const handleProfileChange = (key) => (event) => {
+    setProfileDraft({ ...profileDraft, [key]: event.target.value });
+  };
+
+  const saveProfile = async () => {
+    setProfileStatus('Envoi de la demande de modification...');
+    try {
+      const res = await fetch('http://localhost:3008/auth/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(profileDraft)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Impossible de soumettre les modifications');
+      setPendingProfileStatus(data.pendingProfileStatus || 'pending');
+      setPendingProfileRequestedAt(data.pendingProfileRequestedAt ? new Date(data.pendingProfileRequestedAt) : new Date());
+      setProfileStatus(data.message || 'Vos modifications ont été soumises et attendent l’approbation de l’administration.');
+    } catch (error) {
+      setProfileStatus(`Erreur : ${error.message}`);
+    }
+  };
+
+  const deleteAccount = async () => {
+    const confirmed = window.confirm('Voulez-vous vraiment supprimer votre compte ? Cette action est irréversible.');
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch('http://localhost:3008/auth/me', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const contentType = res.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        data = { message: await res.text() };
+      }
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Impossible de supprimer le compte');
+      }
+
+      setProfileStatus(data.message || 'Compte supprimé.');
+      window.location.href = '/';
+    } catch (error) {
+      setProfileStatus(`Erreur : ${error.message}`);
+    }
+  };
+
+  const handlePasswordChange = (key) => (event) => {
+    setPasswordForm({ ...passwordForm, [key]: event.target.value });
+  };
+
+  const changePassword = async () => {
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordStatus('Veuillez remplir tous les champs du mot de passe.');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordStatus('Les nouveaux mots de passe ne correspondent pas.');
+      return;
+    }
+
+    setPasswordStatus('Mise à jour du mot de passe...');
+    try {
+      const res = await fetch('http://localhost:3008/auth/me/password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Impossible de changer le mot de passe');
+      setPasswordStatus('Mot de passe mis à jour avec succès.');
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      setPasswordStatus(`Erreur : ${error.message}`);
+    }
+  };
+
+  const toggleAccountSetting = (key) => {
+    setAccountSettings({ ...accountSettings, [key]: !accountSettings[key] });
+  };
+
+  const saveSettings = () => {
+    setSettingsStatus('Paramètres enregistrés.');
+    setTimeout(() => setSettingsStatus(''), 3000);
+  };
+
   const loadOffers = async () => {
     try {
       setStatus('Chargement des offres...');
@@ -114,6 +303,7 @@ function PromoterDashboard() {
 
       if (sentRes.ok) {
         const sentData = await sentRes.json();
+        setSentMessages(sentData);
         setMessageStats(prev => ({ ...prev, sent: sentData.length }));
       }
 
@@ -253,6 +443,14 @@ function PromoterDashboard() {
       }
       return null;
     }
+    // Validation spéciale pour courte_duree/location
+    if (form.mainCategory === 'location' && form.subCategory === 'courte_duree') {
+      if (!form.description || !form.address || !form.propertyType || !form.equipment || !Array.isArray(form.availabilityCalendar) || form.availabilityCalendar.length === 0) {
+        return "Veuillez renseigner l'adresse, la description, le type de bien, les équipements et le calendrier.";
+      }
+      return null;
+    }
+
     // Validation spéciale pour longue_duree/location
     if (form.mainCategory === 'location' && form.subCategory === 'longue_duree') {
       if (!form.description || !form.address || !form.propertyType || !form.advance) {
@@ -260,8 +458,8 @@ function PromoterDashboard() {
       }
       return null;
     }
-    if (form.mainCategory !== 'promotion' && (!form.title || !form.description || !form.address)) {
-      return 'Veuillez renseigner le titre, la description et l’adresse.';
+    if (form.mainCategory !== 'promotion' && (!form.description || !form.address)) {
+      return 'Veuillez renseigner la description et l’adresse.';
     }
     if (form.mainCategory === 'promotion' && (!form.description || !form.address || !form.paymentTerms || !form.apartmentTypes || !form.projectStatus)) {
       return 'Veuillez renseigner tous les champs obligatoires pour la promotion.';
@@ -274,7 +472,7 @@ function PromoterDashboard() {
     }
     if (form.mainCategory === 'location') {
       if (!form.subCategory) return 'Choisissez une sous-catégorie location.';
-      if (form.subCategory !== 'longue_duree' && !form.area) return 'Veuillez renseigner la superficie.';
+      if (form.subCategory !== 'longue_duree' && form.subCategory !== 'courte_duree' && !form.area) return 'Veuillez renseigner la superficie.';
       if (form.subCategory !== 'longue_duree' && !form.propertyType) return 'Veuillez renseigner le type de bien.';
       if (form.subCategory === 'longue_duree' && !form.advance) return 'Veuillez indiquer les avances requises.';
       if (form.subCategory === 'courte_duree' && !form.equipment) return 'Veuillez indiquer les équipements.';
@@ -288,17 +486,20 @@ function PromoterDashboard() {
 
   const buildPayload = (isDraft) => ({
     ...form,
-    title: form.mainCategory === 'promotion' ? `Promotion - ${form.address}` : 
-           (form.mainCategory === 'vente' && form.subCategory === 'terrain') ? `Terrain - ${form.address}` :
-           (form.mainCategory === 'vente' && form.subCategory === 'maison') ? `Maison - ${form.address}` :
-           (form.mainCategory === 'vente' && form.subCategory === 'locaux_commerciaux') ? `Locaux commerciaux - ${form.address}` :
-           (form.mainCategory === 'location' && form.subCategory === 'longue_duree') ? `Location - ${form.address}` :
-           form.title,
+    title: form.title?.trim() ? form.title : (
+      form.mainCategory === 'promotion' ? `Promotion - ${form.address}` : 
+      (form.mainCategory === 'vente' && form.subCategory === 'terrain') ? `Terrain - ${form.address}` :
+      (form.mainCategory === 'vente' && form.subCategory === 'maison') ? `Maison - ${form.address}` :
+      (form.mainCategory === 'vente' && form.subCategory === 'locaux_commerciaux') ? `Locaux commerciaux - ${form.address}` :
+      (form.mainCategory === 'location' && form.subCategory === 'longue_duree') ? `Location - ${form.address}` :
+      (form.mainCategory === 'location' && form.subCategory === 'courte_duree') ? `Location courte durée - ${form.address}` :
+      form.address || ''
+    ),
     price: form.price ? Number(form.price) : undefined,
     area: form.area ? Number(form.area) : undefined,
     floor: form.floor ? Number(form.floor) : undefined,
     facadeCount: form.facadeCount ? Number(form.facadeCount) : undefined,
-    apartmentTypes: form.mainCategory === 'promotion' ? Number(form.apartmentTypes) : (form.apartmentTypes ? form.apartmentTypes.split(',').map((item) => item.trim()).filter(Boolean) : []),
+    apartmentTypes: form.apartmentTypes ? form.apartmentTypes.split(',').map((item) => item.trim()).filter(Boolean) : [],
     equipment: form.equipment ? form.equipment.split(',').map((item) => item.trim()).filter(Boolean) : [],
     availabilityCalendar: Array.isArray(form.availabilityCalendar) ? form.availabilityCalendar : [],
     viabilise: normalizeBoolean(form.viabilise),
@@ -383,9 +584,10 @@ function PromoterDashboard() {
   };
 
   const openEditOffer = (offer) => {
+    console.log('PromoterDashboard: openEditOffer', offer?._id || offer?.id, offer);
     setActiveSection('create');
     setEditingOffer(offer);
-    setCreateStep(offer.mainCategory === 'promotion' ? 3 : 2);
+    setCreateStep(3);
     setForm({
       mainCategory: offer.mainCategory || '',
       subCategory: offer.subCategory || '',
@@ -418,13 +620,21 @@ function PromoterDashboard() {
   };
 
   const deleteOffer = async (offerId) => {
+    console.log('PromoterDashboard: deleteOffer', offerId);
+    if (!offerId) {
+      setStatus('❌ Identifiant d\'offre manquant');
+      return;
+    }
     if (!window.confirm('Supprimer cette offre ?')) return;
     try {
       const res = await fetch(`http://localhost:3008/offers/${offerId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error('Impossible de supprimer');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Impossible de supprimer');
+      }
       setStatus('✅ Offre supprimée');
       loadOffers();
     } catch (err) {
@@ -444,13 +654,20 @@ function PromoterDashboard() {
     return statusMatch && categoryMatch && searchMatch;
   });
 
+  const receivedMessages = messages;
+  const mailboxMessages = selectedMailbox === 'sent' ? sentMessages : receivedMessages;
+  const selectedMessage = mailboxMessages.find((m) => m._id === selectedMessageId) || mailboxMessages[0] || null;
+  const mailboxTitle = selectedMailbox === 'sent' ? 'Messages envoyés' : 'Messages reçus';
+  const mailboxSubtitle = selectedMailbox === 'sent'
+    ? 'Historique des messages envoyés à l’administration.'
+    : 'Réponses et notifications reçues de l’administration.';
+
   return (
     <div className="promoter-dashboard">
       <div className="dashboard-shell">
         <aside className="sidebar">
           <div className="sidebar-brand">
             <h2>Espace Entreprise</h2>
-            <p>Agence / Promoteur</p>
           </div>
           <nav className="sidebar-nav">
             <button className={`menu-item ${activeSection === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveSection('dashboard')}>
@@ -906,6 +1123,84 @@ function PromoterDashboard() {
                         </div>
                       </div>
                     </>
+                  ) : form.mainCategory === 'location' && form.subCategory === 'courte_duree' ? (
+                    // Formulaire simplifié pour Location Courte Durée
+                    <>
+                      <div className="form-section">
+                        <h4>📍 Adresse</h4>
+                        <div className="form-group required">
+                          <label>Adresse complète *</label>
+                          <input
+                            type="text"
+                            value={form.address}
+                            onChange={changeField('address')}
+                            placeholder="Ex: Rue des Palmiers, Alger"
+                            required
+                          />
+                          <small>Indiquez l'adresse exacte ou le quartier.</small>
+                        </div>
+                      </div>
+
+                      <div className="form-section">
+                        <h4>📝 Description</h4>
+                        <div className="form-group required">
+                          <label>Description complète *</label>
+                          <textarea
+                            rows="5"
+                            value={form.description}
+                            onChange={changeField('description')}
+                            placeholder="Décrivez votre logement : type, équipements, quartier, avantages..."
+                            required
+                          />
+                          <small>Présentez clairement votre offre courte durée.</small>
+                        </div>
+                      </div>
+
+                      <div className="form-section">
+                        <h4>🏠 Type de bien</h4>
+                        <div className="form-group required">
+                          <label>Type de bien *</label>
+                          <select
+                            value={form.propertyType}
+                            onChange={changeField('propertyType')}
+                            required
+                          >
+                            <option value="">-- Sélectionnez --</option>
+                            <option value="appartement">Appartement</option>
+                            <option value="studio">Studio</option>
+                            <option value="villa">Villa</option>
+                            <option value="maison">Maison</option>
+                            <option value="local_commercial">Local commercial</option>
+                            <option value="duplex">Duplex</option>
+                            <option value="autre">Autre</option>
+                          </select>
+                          <small>Choisissez le type de bien pour la courte durée.</small>
+                        </div>
+                      </div>
+
+                      <div className="form-section">
+                        <h4>🛋️ Équipements</h4>
+                        <div className="form-group required">
+                          <label>Équipements *</label>
+                          <input
+                            type="text"
+                            value={form.equipment}
+                            onChange={changeField('equipment')}
+                            placeholder="Ex: Wi-Fi, climatisation, kitchenette"
+                            required
+                          />
+                          <small>Listez les équipements séparés par des virgules.</small>
+                        </div>
+                      </div>
+
+                      <div className="form-section">
+                        <AvailabilityCalendarForm
+                          value={form.availabilityCalendar}
+                          onChange={handleAvailabilityCalendarChange}
+                          disabled={false}
+                        />
+                      </div>
+                    </>
                   ) : (
                     // Formulaire complet pour les autres catégories
                     <>
@@ -1154,13 +1449,77 @@ function PromoterDashboard() {
 
           {activeSection === 'offers' && (
             <section className="my-offers-section">
-              <div className="section-header"><h2>📋 Mes offres</h2><p>Consultez, filtrez, modifiez et supprimez vos annonces.</p></div>
-              <div className="filter-bar"><select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}><option value="all">Tous</option><option value="draft">Brouillons</option><option value="pending">En attente</option><option value="approved">Validées</option><option value="rejected">Rejetées</option></select><select value={filters.mainCategory} onChange={(e) => setFilters({ ...filters, mainCategory: e.target.value })}><option value="all">Toutes catégories</option><option value="promotion">Promotion</option><option value="vente">Vente</option><option value="location">Location</option></select><input type="search" placeholder="Rechercher" value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
+              <div className="offers-header">
+                <div>
+                  <h2>📋 Mes offres</h2>
+                  <p>Consultez et gérez rapidement toutes vos annonces en un seul endroit.</p>
+                </div>
+                <div className="offers-summary">
+                  <span>{filteredOffers.length} offre{filteredOffers.length > 1 ? 's' : ''} affichée{filteredOffers.length > 1 ? 's' : ''}</span>
+                  <span>{offers.length} totale{offers.length > 1 ? 's' : ''}</span>
+                </div>
               </div>
+              <div className="filter-bar">
+                <div className="filter-group">
+                  <label>Statut</label>
+                  <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
+                    <option value="all">Tous</option>
+                    <option value="draft">Brouillons</option>
+                    <option value="pending">En attente</option>
+                    <option value="approved">Validées</option>
+                    <option value="rejected">Rejetées</option>
+                  </select>
+                </div>
+                <div className="filter-group">
+                  <label>Catégorie</label>
+                  <select value={filters.mainCategory} onChange={(e) => setFilters({ ...filters, mainCategory: e.target.value })}>
+                    <option value="all">Toutes catégories</option>
+                    <option value="promotion">Promotion</option>
+                    <option value="vente">Vente</option>
+                    <option value="location">Location</option>
+                  </select>
+                </div>
+                <div className="filter-group search-group">
+                  <label>Recherche</label>
+                  <input type="search" placeholder="Rechercher par titre ou adresse" value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
+                </div>
+              </div>
+
               {filteredOffers.length > 0 ? (
-                <div className="offers-grid">{filteredOffers.map((offer) => (
-                  <div key={offer._id} className="offer-card"><div className="offer-image"><img src={offer.images?.[0] || 'https://via.placeholder.com/400x240?text=Photo'} alt={offer.title} /><span className={`status-badge ${offer.isDraft ? 'draft' : offer.status}`}>{offer.isDraft ? 'Brouillon' : offer.status === 'approved' ? 'Validée' : offer.status === 'pending' ? 'En attente' : 'Rejetée'}</span></div><div className="offer-card-body"><h3>{offer.title}</h3><p className="offer-location">📍 {offer.address}</p><p className="offer-category">🏷️ {offer.mainCategory} {offer.subCategory && `• ${offer.subCategory}`}</p>{offer.price && <p className="offer-price">💰 {offer.price.toLocaleString()} FCFA</p>}<p className="offer-date">📅 {new Date(offer.createdAt).toLocaleDateString('fr-FR')}</p><div className="offer-actions"><button onClick={() => openEditOffer(offer)}>Modifier</button><button className="danger" onClick={() => deleteOffer(offer._id)}>Supprimer</button></div></div></div>
-                ))}</div>
+                <div className="offers-grid">
+                  {filteredOffers.map((offer) => (
+                    <div key={offer._id || offer.id} className="offer-card">
+                      <div className="offer-image">
+                        <img src={offer.images?.[0] || 'https://via.placeholder.com/400x240?text=Photo'} alt={offer.title} />
+                        <span className={`status-badge ${offer.isDraft ? 'draft' : offer.status}`}>{offer.isDraft ? 'Brouillon' : offer.status === 'approved' ? 'Validée' : offer.status === 'pending' ? 'En attente' : 'Rejetée'}</span>
+                      </div>
+                      <div className="offer-card-body">
+                        <div className="offer-card-top">
+                          <h3>{offer.title}</h3>
+                          <div className="offer-tags">
+                            <span>{offer.mainCategory}</span>
+                            {offer.subCategory && <span>{offer.subCategory}</span>}
+                          </div>
+                        </div>
+                        <p className="offer-description">{offer.description ? `${offer.description.slice(0, 110)}${offer.description.length > 110 ? '…' : ''}` : 'Aucune description disponible.'}</p>
+                        <div className="offer-meta-row">
+                          <span className="offer-meta-item">📍 {offer.address || 'Adresse non renseignée'}</span>
+                          {offer.price && <span className="offer-meta-item">💰 {offer.price.toLocaleString()} FCFA</span>}
+                        </div>
+                        <div className="offer-footer-row">
+                          <div className="offer-footer-info">
+                            <span>{new Date(offer.createdAt).toLocaleDateString('fr-FR')}</span>
+                            <span>{offer.images?.length ? `${offer.images.length} photo${offer.images.length > 1 ? 's' : ''}` : '0 photo'}</span>
+                          </div>
+                          <div className="offer-actions">
+                            <button type="button" onClick={() => openEditOffer(offer)}>Modifier</button>
+                            <button type="button" className="danger" onClick={() => deleteOffer(offer._id || offer.id)}>Supprimer</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="empty-state"><div className="empty-icon">🏠</div><h4>Aucune offre correspondant aux filtres</h4><p>Essayez un autre statut ou créez une nouvelle offre.</p></div>
               )}
@@ -1169,87 +1528,119 @@ function PromoterDashboard() {
 
           {activeSection === 'messages' && (
             <section className="messages-section">
-              <div className="section-header">
-                <h2>💬 Messages</h2>
-                <p>Communiquez avec l'administration et consultez vos messages.</p>
-              </div>
-
-              <div className="messages-stats">
-                <div className="stat-card">
-                  <span>Messages reçus</span>
-                  <strong>{messageStats.received}</strong>
+              <div className="messages-header">
+                <div>
+                  <h2>💬 Messages</h2>
+                  <p>Envoyez un message et consultez simplement les messages reçus ou envoyés.</p>
                 </div>
-                <div className="stat-card">
-                  <span>Messages envoyés</span>
-                  <strong>{messageStats.sent}</strong>
-                </div>
-                <div className="stat-card">
-                  <span>Non lus</span>
-                  <strong className={messageStats.unread > 0 ? 'unread' : ''}>{messageStats.unread}</strong>
+                <div className="messages-overview">
+                  <div>
+                    <span>Reçus</span>
+                    <strong>{messageStats.received}</strong>
+                  </div>
+                  <div>
+                    <span>Envoyés</span>
+                    <strong>{messageStats.sent}</strong>
+                  </div>
                 </div>
               </div>
 
-              <div className="message-send-panel">
-                <div className="message-send-card">
-                  <h3>Envoyer un message à l'administration</h3>
-                  <div className="form-group">
-                    <label>Sujet</label>
-                    <input
-                      type="text"
-                      value={companyMessage.subject}
-                      onChange={handleCompanyMessageChange('subject')}
-                      placeholder="Sujet du message"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Message</label>
-                    <textarea
-                      rows="4"
-                      value={companyMessage.content}
-                      onChange={handleCompanyMessageChange('content')}
-                      placeholder="Votre message à l'administration"
-                    />
-                  </div>
-                  <button type="button" className="btn-primary" onClick={sendMessageToAdmin}>
-                    Envoyer au support
+              <div className="message-send-card">
+                <h3>Envoyer un message</h3>
+                <div className="form-group">
+                  <label>Sujet</label>
+                  <input
+                    type="text"
+                    value={companyMessage.subject}
+                    onChange={handleCompanyMessageChange('subject')}
+                    placeholder="Sujet du message"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Message</label>
+                  <textarea
+                    rows="6"
+                    value={companyMessage.content}
+                    onChange={handleCompanyMessageChange('content')}
+                    placeholder="Votre message à l'administration"
+                  />
+                </div>
+                <button type="button" className="btn-primary" onClick={sendMessageToAdmin}>
+                  Envoyer au support
+                </button>
+                {companyMessageStatus && <div className="message-status">{companyMessageStatus}</div>}
+              </div>
+
+              <div className="mailbox-card simple-mailbox">
+                <div className="mailbox-tabs">
+                  <button
+                    type="button"
+                    className={selectedMailbox === 'inbox' ? 'active' : ''}
+                    onClick={() => { setSelectedMailbox('inbox'); setSelectedMessageId(null); }}
+                  >
+                    Reçus ({messageStats.received})
                   </button>
-                  {companyMessageStatus && <div className="message-status">{companyMessageStatus}</div>}
+                  <button
+                    type="button"
+                    className={selectedMailbox === 'sent' ? 'active' : ''}
+                    onClick={() => { setSelectedMailbox('sent'); setSelectedMessageId(null); }}
+                  >
+                    Envoyés ({messageStats.sent})
+                  </button>
+                </div>
+
+                <div className="messages-list simple-list">
+                  {mailboxMessages.length > 0 ? (
+                    mailboxMessages.map((message) => {
+                      const isSelected = selectedMessage && selectedMessage._id === message._id;
+                      return (
+                        <button
+                          key={message._id}
+                          type="button"
+                          className={`message-card ${isSelected ? 'selected' : ''}`}
+                          onClick={() => setSelectedMessageId(message._id)}
+                        >
+                          <div className="message-card-header">
+                            <strong>{message.subject || 'Sans objet'}</strong>
+                            <span>{new Date(message.createdAt).toLocaleDateString('fr-FR')}</span>
+                          </div>
+                          <p className="message-preview">
+                            {message.content.substring(0, 100)}{message.content.length > 100 ? '…' : ''}
+                          </p>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="empty-state">
+                      <h4>📭 Aucun message</h4>
+                      <p>Envoyez un message à l'administration pour démarrer.</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="messages-list">
-                {messages.length > 0 ? (
-                  messages.map((message) => (
-                    <div key={message._id} className={`message-card ${!message.isRead ? 'unread' : ''}`}>
-                      <div className="message-header">
-                        <strong>{message.subject}</strong>
-                        <span className="message-date">
-                          {new Date(message.createdAt).toLocaleDateString('fr-FR')}
-                        </span>
-                      </div>
-                      <p className="message-preview">{message.content.substring(0, 100)}...</p>
-                      {message.attachments && message.attachments.length > 0 && (
-                        <div className="message-attachments">
-                          📎 {message.attachments.length} pièce(s) jointe(s)
-                        </div>
-                      )}
-                      <div className="message-actions">
-                        {!message.isRead && (
-                          <button
-                            onClick={() => markMessageAsRead(message._id)}
-                            className="btn-secondary"
-                          >
-                            Marquer comme lu
-                          </button>
-                        )}
-                        <button className="btn-primary">Voir le détail</button>
+              <div className="message-detail-card">
+                {selectedMessage ? (
+                  <>
+                    <div className="message-detail-header">
+                      <div>
+                        <h3>{selectedMessage.subject || 'Sans objet'}</h3>
+                        <p className="message-detail-from">
+                          {selectedMailbox === 'sent' ? 'Destinataire : Administration' : 'Expéditeur : Administration'} • {new Date(selectedMessage.createdAt).toLocaleString('fr-FR')}
+                        </p>
                       </div>
                     </div>
-                  ))
+                    <p className="message-detail-content">{selectedMessage.content}</p>
+                    {selectedMessage.attachments?.length > 0 && (
+                      <div className="message-attachments">
+                        📎 {selectedMessage.attachments.length} pièce(s) jointe(s)
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <div className="empty-state">
-                    <h4>📭 Aucun message</h4>
-                    <p>Vous n'avez pas encore reçu de messages de l'administration.</p>
+                  <div className="detail-empty">
+                    <h4>Sélectionnez un message</h4>
+                    <p>Cliquez sur un message dans la liste pour afficher son contenu ici.</p>
                   </div>
                 )}
               </div>
@@ -1260,143 +1651,198 @@ function PromoterDashboard() {
             <section className="profile-section">
               <div className="section-header">
                 <h2>🏢 Profil de l'entreprise</h2>
-                <p>Gérez vos informations, paramètres et équipe.</p>
+                <p>Affichez toutes vos informations d'agence ou de promoteur, modifiez votre compte et ajustez vos paramètres.</p>
               </div>
 
-              <div className="profile-content">
-                <div className="profile-main-card">
+              <div className="profile-grid">
+                <div className="profile-summary-card">
                   <div className="company-header">
                     <div className="company-logo">
-                      <span className="logo-placeholder">{user?.companyName?.charAt(0) || 'E'}</span>
+                      <span className="logo-placeholder">{profileInfo.companyName?.charAt(0) || profileInfo.name?.charAt(0) || 'E'}</span>
                     </div>
                     <div className="company-info">
-                      <h3>{user?.companyName || 'Entreprise'}</h3>
-                      <p className="company-type">Agence Immobilière</p>
+                      <h3>{profileInfo.companyName || `${profileInfo.name || 'Prestataire'} ${profileInfo.firstName || ''}`.trim()}</h3>
+                      <p className="company-type">
+                        {profileInfo.role === 'admin'
+                          ? 'Admin'
+                          : profileInfo.companyType === 'agence'
+                            ? 'Agence'
+                            : profileInfo.companyType === 'bureau d\'affaires'
+                              ? 'Bureau d’affaires'
+                              : 'Promoteur'}
+                      </p>
                       <div className="company-status">
-                        <span className={`status-badge ${user?.status === 'approved' ? 'active' : 'pending'}`}>
-                          {user?.status === 'approved' ? '✓ Approuvé' : '⏳ En attente'}
+                        <span className={`status-badge ${profileInfo.status === 'approved' ? 'active' : 'pending'}`}>
+                          {profileInfo.status === 'approved' ? '✓ Approuvé' : '⏳ En attente'}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="company-details-grid">
-                    <div className="detail-group">
-                      <h4>Informations de contact</h4>
-                      <div className="detail-item">
-                        <span className="label">Email professionnel</span>
-                        <span className="value">{user?.companyEmail}</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">Téléphone</span>
-                        <span className="value">{user?.companyPhone || 'Non renseigné'}</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">Adresse</span>
-                        <span className="value">{user?.companyAddress || 'Non renseignée'}</span>
-                      </div>
+                  <div className="summary-grid">
+                    <div className="summary-item">
+                      <span>Type de compte</span>
+                      <strong>{profileInfo.role === 'admin' ? 'Administrateur' :
+                        profileInfo.companyType === 'agence' ? 'Agence' :
+                        profileInfo.companyType === 'bureau d\'affaires' ? 'Bureau d’affaires' :
+                        'Promoteur'
+                      }</strong>
                     </div>
-
-                    <div className="detail-group">
-                      <h4>Informations légales</h4>
-                      <div className="detail-item">
-                        <span className="label">Numéro RC</span>
-                        <span className="value">{user?.rcNumber || 'Non renseigné'}</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">ICE</span>
-                        <span className="value">{user?.iceNumber || 'Non renseigné'}</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">Date d'inscription</span>
-                        <span className="value">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-FR') : 'N/A'}</span>
-                      </div>
+                    <div className="summary-item">
+                      <span>Date d'inscription</span>
+                      <strong>{profileInfo.createdAt ? new Date(profileInfo.createdAt).toLocaleDateString('fr-FR') : 'Non renseignée'}</strong>
                     </div>
-
-                    <div className="detail-group">
-                      <h4>Statistiques</h4>
-                      <div className="stats-grid">
-                        <div className="stat-item">
-                          <span className="stat-number">{stats.total}</span>
-                          <span className="stat-label">Offres totales</span>
-                        </div>
-                        <div className="stat-item">
-                          <span className="stat-number">{stats.approved}</span>
-                          <span className="stat-label">Approuvées</span>
-                        </div>
-                        <div className="stat-item">
-                          <span className="stat-number">{stats.pending}</span>
-                          <span className="stat-label">En attente</span>
-                        </div>
-                        <div className="stat-item">
-                          <span className="stat-number">{stats.views}</span>
-                          <span className="stat-label">Vues</span>
-                        </div>
-                      </div>
+                    <div className="summary-item">
+                      <span>Messages</span>
+                      <strong>{messageStats.received + messageStats.sent}</strong>
+                    </div>
+                    <div className="summary-item">
+                      <span>Offres actives</span>
+                      <strong>{stats.approved}</strong>
                     </div>
                   </div>
+
+                  <div className="detail-group">
+                    <h4>Informations principales</h4>
+                    <div className="detail-item">
+                      <span className="label">Email</span>
+                      <span className="value">{profileInfo.companyEmail || 'Non renseigné'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Téléphone</span>
+                      <span className="value">{profileInfo.companyPhone || 'Non renseigné'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Adresse</span>
+                      <span className="value">{profileInfo.companyAddress || 'Non renseignée'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Numéro RC</span>
+                      <span className="value">{profileInfo.rcNumber || 'Non renseigné'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">ICE</span>
+                      <span className="value">{profileInfo.iceNumber || 'Non renseigné'}</span>
+                    </div>
+                  </div>
+                  {pendingProfileStatus === 'pending' && (
+                    <div className="pending-banner">
+                      <strong>Modification en attente</strong>
+                      <p>Vos changements ont été pris en compte comme brouillon. Ils seront appliqués après validation par l'administration.</p>
+                      {pendingProfileRequestedAt && (
+                        <p className="pending-meta">Demandé le {pendingProfileRequestedAt.toLocaleDateString('fr-FR')}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                <div className="profile-features-grid">
-                  <div className="feature-card">
-                    <div className="feature-icon">👥</div>
-                    <h4>Équipe</h4>
-                    <p>Gérez les membres de votre équipe et leurs accès.</p>
-                    <div className="feature-status">
-                      <span className="coming-soon">Bientôt disponible</span>
+                <div className="profile-panel">
+                  <div className="profile-card">
+                    <div className="card-header">
+                      <h3>Informations du compte</h3>
+                      <p>Modifiez vos coordonnées professionnelles et légales.</p>
                     </div>
+                    <div className="profile-fields-grid">
+                      <div className="form-group">
+                        <label>Nom de l'agence</label>
+                        <input type="text" value={profileDraft.companyName} onChange={handleProfileChange('companyName')} placeholder="Nom de l'agence" />
+                      </div>
+                      <div className="form-group">
+                        <label>Type d'entreprise</label>
+                        <select value={profileDraft.companyType} onChange={handleProfileChange('companyType')}>
+                          <option value="promoteur">Promoteur</option>
+                          <option value="agence">Agence</option>
+                          <option value="bureau d'affaires">Bureau d'affaires</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Nom</label>
+                        <input type="text" value={profileDraft.name} onChange={handleProfileChange('name')} placeholder="Nom" />
+                      </div>
+                      <div className="form-group">
+                        <label>Prénom</label>
+                        <input type="text" value={profileDraft.firstName} onChange={handleProfileChange('firstName')} placeholder="Prénom" />
+                      </div>
+                      <div className="form-group">
+                        <label>Email</label>
+                        <input type="email" value={profileDraft.companyEmail} onChange={handleProfileChange('companyEmail')} placeholder="Email professionnel" />
+                      </div>
+                      <div className="form-group">
+                        <label>Téléphone</label>
+                        <input type="text" value={profileDraft.companyPhone} onChange={handleProfileChange('companyPhone')} placeholder="Téléphone" />
+                      </div>
+                      <div className="form-group">
+                        <label>Adresse</label>
+                        <input type="text" value={profileDraft.companyAddress} onChange={handleProfileChange('companyAddress')} placeholder="Adresse" />
+                      </div>
+                      <div className="form-group">
+                        <label>Numéro RC</label>
+                        <input type="text" value={profileDraft.rcNumber} onChange={handleProfileChange('rcNumber')} placeholder="Numéro RC" />
+                      </div>
+                      <div className="form-group">
+                        <label>ICE</label>
+                        <input type="text" value={profileDraft.iceNumber} onChange={handleProfileChange('iceNumber')} placeholder="ICE" />
+                      </div>
+                    </div>
+                    <div className="profile-actions-row">
+                      <button type="button" className="btn-primary" onClick={saveProfile}>Soumettre pour approbation</button>
+                      <button type="button" className="btn-danger" onClick={deleteAccount}>Supprimer le compte</button>
+                    </div>
+                    {profileStatus && <div className="profile-status">{profileStatus}</div>}
+                    {pendingProfileStatus === 'pending' && !profileStatus && (
+                      <div className="profile-status">Des modifications sont en attente d'approbation. Elles ne seront pas modifiées avant validation.</div>
+                    )}
                   </div>
 
-                  <div className="feature-card">
-                    <div className="feature-icon">📊</div>
-                    <h4>Analytics</h4>
-                    <p>Suivez les performances de vos offres en détail.</p>
-                    <div className="feature-status">
-                      <span className="coming-soon">Bientôt disponible</span>
+                  <div className="profile-card">
+                    <div className="card-header">
+                      <h3>Changer le mot de passe</h3>
+                      <p>Modifiez votre mot de passe de compte en toute sécurité.</p>
                     </div>
+                    <div className="profile-fields-grid">
+                      <div className="form-group">
+                        <label>Mot de passe actuel</label>
+                        <input type="password" value={passwordForm.currentPassword} onChange={handlePasswordChange('currentPassword')} placeholder="Mot de passe actuel" />
+                      </div>
+                      <div className="form-group">
+                        <label>Nouveau mot de passe</label>
+                        <input type="password" value={passwordForm.newPassword} onChange={handlePasswordChange('newPassword')} placeholder="Nouveau mot de passe" />
+                      </div>
+                      <div className="form-group">
+                        <label>Confirmer le nouveau mot de passe</label>
+                        <input type="password" value={passwordForm.confirmPassword} onChange={handlePasswordChange('confirmPassword')} placeholder="Confirmer le mot de passe" />
+                      </div>
+                    </div>
+                    <div className="profile-actions-row">
+                      <button type="button" className="btn-primary" onClick={changePassword}>Mettre à jour le mot de passe</button>
+                    </div>
+                    {passwordStatus && <div className="password-status">{passwordStatus}</div>}
                   </div>
 
-                  <div className="feature-card">
-                    <div className="feature-icon">📝</div>
-                    <h4>Modèles</h4>
-                    <p>Créez des modèles d'annonces pour gagner du temps.</p>
-                    <div className="feature-status">
-                      <span className="coming-soon">Bientôt disponible</span>
+                  <div className="profile-card">
+                    <div className="card-header">
+                      <h3>Paramètres du compte</h3>
+                      <p>Personnalisez votre expérience et vos notifications.</p>
                     </div>
-                  </div>
-
-                  <div className="feature-card">
-                    <div className="feature-icon">💬</div>
-                    <h4>Messagerie</h4>
-                    <p>Communiquez directement avec l'administration.</p>
-                    <div className="feature-status">
-                      <span className="available">Disponible</span>
+                    <div className="settings-grid">
+                      <label className="settings-switch">
+                        <input type="checkbox" checked={accountSettings.emailAlerts} onChange={() => toggleAccountSetting('emailAlerts')} />
+                        <span>Recevoir des alertes par email</span>
+                      </label>
+                      <label className="settings-switch">
+                        <input type="checkbox" checked={accountSettings.publicProfile} onChange={() => toggleAccountSetting('publicProfile')} />
+                        <span>Profil visible publiquement</span>
+                      </label>
+                      <label className="settings-switch">
+                        <input type="checkbox" checked={accountSettings.smsNotifications} onChange={() => toggleAccountSetting('smsNotifications')} />
+                        <span>Notifications SMS</span>
+                      </label>
                     </div>
-                  </div>
-
-                  <div className="feature-card">
-                    <div className="feature-icon">🔔</div>
-                    <h4>Notifications</h4>
-                    <p>Recevez des alertes sur vos offres et messages.</p>
-                    <div className="feature-status">
-                      <span className="available">Disponible</span>
+                    <div className="profile-actions-row">
+                      <button type="button" className="btn-secondary" onClick={saveSettings}>Enregistrer les paramètres</button>
                     </div>
+                    {settingsStatus && <div className="settings-status">{settingsStatus}</div>}
                   </div>
-
-                  <div className="feature-card">
-                    <div className="feature-icon">🔒</div>
-                    <h4>Sécurité</h4>
-                    <p>Gérez vos mots de passe et la sécurité du compte.</p>
-                    <div className="feature-status">
-                      <span className="coming-soon">Bientôt disponible</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="profile-actions">
-                  <button className="btn-primary">Modifier les informations</button>
-                  <button className="btn-secondary">Télécharger mes données</button>
-                  <button className="btn-danger">Supprimer le compte</button>
                 </div>
               </div>
             </section>

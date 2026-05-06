@@ -122,9 +122,17 @@ router.get('/admin/stats/overview', adminMiddleware, async (req, res) => {
     const approvedOffers = await Offer.countDocuments({ status: 'approved' });
     const pendingOffers = await Offer.countDocuments({ status: 'pending' });
     const rejectedOffers = await Offer.countDocuments({ status: 'rejected' });
-    const byCategory = await Offer.aggregate([
+    
+    const byCategoryArray = await Offer.aggregate([
       { $group: { _id: '$mainCategory', count: { $sum: 1 } } }
     ]);
+    
+    // Transformer l'array en objet
+    const byCategory = {};
+    byCategoryArray.forEach(item => {
+      byCategory[item._id || 'Sans catégorie'] = item.count;
+    });
+    
     res.json({ totalOffers, approvedOffers, pendingOffers, rejectedOffers, byCategory });
   } catch (error) {
     console.log(error);
@@ -249,10 +257,16 @@ router.put('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// DELETE : supprimer une offre par son propriétaire
+// DELETE : supprimer une offre par son propriétaire ou par l'admin
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const offer = await Offer.findOneAndDelete({ _id: req.params.id, user: req.user.userId });
+    let offer;
+    if (req.user.role === 'admin') {
+      offer = await Offer.findByIdAndDelete(req.params.id);
+    } else {
+      offer = await Offer.findOneAndDelete({ _id: req.params.id, user: req.user.userId });
+    }
+
     if (!offer) return res.status(404).json({ message: 'Offre non trouvée ou non autorisée' });
     res.json({ message: 'Offre supprimée' });
   } catch (error) {

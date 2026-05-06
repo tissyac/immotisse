@@ -7,7 +7,7 @@ function ClientMessageForm({ offerId, onMessageSent }) {
   const [contactInfo, setContactInfo] = useState({
     name: user?.companyName || '',
     email: user?.companyEmail || '',
-    phone: ''
+    phone: user?.companyPhone || ''
   });
   const [form, setForm] = useState({
     subject: '',
@@ -20,7 +20,7 @@ function ClientMessageForm({ offerId, onMessageSent }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.subject.trim() || !form.content.trim() || (!user && !contactInfo.name.trim()) || (!user && !contactInfo.email.trim())) {
+    if (!form.subject.trim() || !form.content.trim() || !contactInfo.name.trim() || !contactInfo.phone.trim()) {
       setMessage('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -66,6 +66,7 @@ function ClientMessageForm({ offerId, onMessageSent }) {
           name: contactInfo.name,
           email: contactInfo.email,
           phone: contactInfo.phone,
+          subject: form.subject,
           message: form.content,
           offer: offerId
         };
@@ -114,41 +115,48 @@ function ClientMessageForm({ offerId, onMessageSent }) {
       <p>Envoyez un message à l'administration pour toute question concernant cette offre.</p>
 
       <form onSubmit={handleSubmit}>
-        {!user && (
-          <>
-            <div className="form-group">
-              <label>Nom complet *</label>
-              <input
-                type="text"
-                value={contactInfo.name}
-                onChange={(e) => setContactInfo(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Votre nom"
-                required
-              />
+        <div className="contact-info-block">
+          <div className="contact-info-header">
+            <div>
+              <h4>Vos coordonnées</h4>
+              <p>Ces informations sont optionnelles et permettent à IMMOTISSE de mieux vous répondre.</p>
             </div>
+          </div>
 
+          <div className="form-group">
+            <label>Nom complet *</label>
+            <input
+              type="text"
+              value={contactInfo.name}
+              onChange={(e) => setContactInfo(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Votre nom"
+              required
+            />
+          </div>
+
+          <div className="contact-fields-grid">
             <div className="form-group">
-              <label>Email *</label>
+              <label>Email (optionnel)</label>
               <input
                 type="email"
                 value={contactInfo.email}
                 onChange={(e) => setContactInfo(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="Votre email"
-                required
               />
             </div>
 
             <div className="form-group">
-              <label>Téléphone</label>
+              <label>Téléphone *</label>
               <input
                 type="tel"
                 value={contactInfo.phone}
                 onChange={(e) => setContactInfo(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="Votre numéro de téléphone"
+                required
               />
             </div>
-          </>
-        )}
+          </div>
+        </div>
 
         <div className="form-group">
           <label>Sujet *</label>
