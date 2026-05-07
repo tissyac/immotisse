@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middleware/uploadMiddleware');
+const { upload } = require('../services/cloudinaryService');
 const { authMiddleware } = require('../middleware/authMiddleware');
 
 // POST : upload un fichier (authentifié)
@@ -22,14 +22,15 @@ router.post('/upload', authMiddleware, (req, res) => {
         });
       }
 
-      const fileUrl = `/uploads/${req.file.filename}`;
+      const fileUrl = req.file.path; // Cloudinary retourne l'URL complète
       console.log('✅ Upload réussi:', fileUrl);
       res.json({
         success: true,
         fileUrl,
         filename: req.file.filename,
         size: req.file.size,
-        mimetype: req.file.mimetype
+        mimetype: req.file.mimetype,
+        public_id: req.file.filename // Pour suppression future si besoin
       });
     } catch (error) {
       console.error('❌ Handler error:', error);
@@ -65,14 +66,15 @@ router.post('/uploadPublic', (req, res) => {
         });
       }
 
-      const fileUrl = `/uploads/${req.file.filename}`;
+      const fileUrl = req.file.path; // Cloudinary retourne l'URL complète
       console.log('✅ Upload réussi:', fileUrl);
       res.json({
         success: true,
         fileUrl,
         filename: req.file.filename,
         size: req.file.size,
-        mimetype: req.file.mimetype
+        mimetype: req.file.mimetype,
+        public_id: req.file.filename // Pour suppression future si besoin
       });
     } catch (error) {
       console.error('❌ Handler error:', error);
@@ -104,10 +106,11 @@ router.post('/uploadMultiple', authMiddleware, (req, res) => {
       }
 
       const files = req.files.map(file => ({
-        fileUrl: `/uploads/${file.filename}`,
+        fileUrl: file.path, // Cloudinary retourne l'URL complète
         filename: file.filename,
         size: file.size,
-        mimetype: file.mimetype
+        mimetype: file.mimetype,
+        public_id: file.filename // Pour suppression future si besoin
       }));
 
       console.log(`✅ ${files.length} fichiers uploadés`);
