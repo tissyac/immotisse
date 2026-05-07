@@ -208,6 +208,9 @@ function CategoryPage() {
                           {offer.price ? `${offer.price.toLocaleString()} DA` : 'Prix sur demande'}
                         </p>
                         <div className="offer-address">📍 {offer.address || offer.city || 'Adresse non spécifiée'}</div>
+                        <div className="offer-actions">
+                          <span className="view-offer-btn">Voir plus</span>
+                        </div>
                       </div>
                     </Link>
                   ))}
@@ -349,6 +352,9 @@ function CategoryPage() {
                       <div className="offer-address">
                         <span className="location-icon">📍</span>
                         <span className="location-text">{offer.address || offer.city || 'Adresse non précisée'}</span>
+                      </div>
+                      <div className="offer-actions">
+                        <span className="view-offer-btn">Voir plus</span>
                       </div>
                     </div>
                   </Link>

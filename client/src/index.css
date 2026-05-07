@@ -233,7 +233,12 @@ main {
   color: #475569;
   font-size: 0.9rem;
   line-height: 1.4;
+  white-space: pre-line;
   margin-bottom: 12px;
+}
+
+.offer-full-description p {
+  white-space: pre-line;
 }
 
 .show-more-btn {
@@ -293,6 +298,7 @@ main {
 .info-value {
   color: #0f172a;
   font-weight: 600;
+  white-space: pre-line;
 }
 
 .offer-full-description {
@@ -1173,6 +1179,8 @@ textarea {
 
 textarea {
   min-height: 120px;
+  white-space: pre-wrap;
+  line-height: 1.6;
 }
 
 button {

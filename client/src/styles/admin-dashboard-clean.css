@@ -104,6 +104,25 @@
   margin-bottom: 24px;
 }
 
+.offer-filter-bar,
+.offer-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.offer-filter-bar span {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.offer-summary-bar p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
 .panel-header h3 {
   font-size: 1.85rem;
   margin-bottom: 10px;

@@ -88,6 +88,8 @@
 .form-group textarea {
   min-height: 100px;
   resize: vertical;
+  white-space: pre-wrap;
+  line-height: 1.6;
 }
 
 .auth-submit {

@@ -547,6 +547,7 @@
   min-height: 120px;
   line-height: 1.6;
   font-family: inherit;
+  white-space: pre-wrap;
 }
 
 .form-group select {
@@ -871,6 +872,11 @@
   margin: 0 0 18px;
   color: var(--gray-medium);
   line-height: 1.6;
+  white-space: pre-line;
+}
+
+.offer-full-description p {
+  white-space: pre-line;
 }
 
 .offer-meta-row,

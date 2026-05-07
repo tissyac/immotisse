@@ -213,32 +213,32 @@ function Home() {
           <h2>Pourquoi choisir IMMOTISSE</h2>
           <div className="features-grid">
             <div className="feature-item">
-              <div className="feature-icon">✅</div>
+              <div className="feature-icon">🏠</div>
               <h3>Large choix de biens immobiliers</h3>
               <p>Appartements, villas, terrains et locaux adaptés à tous les besoins</p>
             </div>
             <div className="feature-item">
-              <div className="feature-icon">✅</div>
+              <div className="feature-icon">⚡</div>
               <h3>Gain de temps et simplicité</h3>
               <p>Recherche rapide et mise en relation directe avec les professionnels</p>
             </div>
             <div className="feature-item">
-              <div className="feature-icon">✅</div>
+              <div className="feature-icon">🎯</div>
               <h3>Centralisation des agences et promotions immobilières</h3>
               <p>Toutes vos recherches immobilières au même endroit</p>
             </div>
             <div className="feature-item">
-              <div className="feature-icon">✅</div>
+              <div className="feature-icon">🔒</div>
               <h3>Plateforme fiable et sécurisée</h3>
               <p>Transactions sécurisées et données protégées</p>
             </div>
             <div className="feature-item">
-              <div className="feature-icon">✅</div>
+              <div className="feature-icon">🤝</div>
               <h3>Confiance et transparence</h3>
               <p>Informations claires et vérifiées</p>
             </div>
             <div className="feature-item">
-              <div className="feature-icon">✅</div>
+              <div className="feature-icon">📋</div>
               <h3>Accompagnement dans les démarches administratives</h3>
               <p>Aide complète pour vos formalités</p>
             </div>

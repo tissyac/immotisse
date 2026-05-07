@@ -473,6 +473,16 @@ function AdminDashboard() {
     return 'N/A';
   };
 
+  const getOfferCompanyName = (offer) => {
+    return offer?.companyName || offer?.company?.companyName || offer?.creator?.companyName || offer?.user?.companyName || 'Entreprise inconnue';
+  };
+
+  const getOfferPublishedLabel = (offer) => {
+    if (offer?.status === 'approved' || offer?.isPublished) return 'Oui';
+    if (offer?.status === 'rejected') return 'Non';
+    return 'En attente';
+  };
+
   const cancelOfferEdit = () => {
     setEditedOffer(selectedOffer ? { ...selectedOffer } : null);
     setShowOfferDetails(false);
@@ -606,19 +616,43 @@ function AdminDashboard() {
         <section className="section admin-panel">
           <div className="panel-header">
             <h3>{offerStatusFilter === 'pending' ? 'Offres en attente de validation' : offerStatusFilter === 'approved' ? 'Offres publiées' : offerStatusFilter === 'rejected' ? 'Offres rejetées' : 'Toutes les offres'}</h3>
-            <p className="panel-description">Vérifiez les annonces soumises par les entreprises et modifiez-les avant d’approuver.</p>
-            <p className="panel-description">Rejeter conserve l’historique comme offre refusée ; supprimer efface définitivement l’offre.</p>
+            <p className="panel-description">Vérifiez les annonces soumises par les entreprises et modifiez-les, approuvez-les ou supprimez-les selon le suivi.</p>
+            <p className="panel-description">Chaque offre indique l’entreprise qui l’a publiée et son statut de publication.</p>
           </div>
-          {offers.length ? (
-            <div className="requests-layout">
-              <div className="offer-filter-bar">
-                <label>Filtrer les offres :</label>
-                <select value={offerStatusFilter} onChange={(e) => { setOfferStatusFilter(e.target.value); setPage(1); }}>
-                  <option value="pending">En attente</option>
-                  <option value="approved">Publiées</option>
-                  <option value="rejected">Rejetées</option>
-                  <option value="all">Toutes</option>
-                </select>
+          <div className="requests-layout">
+            <div className="offer-filter-bar">
+                <span>Voir :</span>
+                <button
+                  className={`btn btn-sm ${offerStatusFilter === 'pending' ? 'btn-primary' : 'btn-secondary'}`}
+                  type="button"
+                  onClick={() => { setOfferStatusFilter('pending'); setPage(1); }}
+                >
+                  Offres en attente
+                </button>
+                <button
+                  className={`btn btn-sm ${offerStatusFilter === 'approved' ? 'btn-primary' : 'btn-secondary'}`}
+                  type="button"
+                  onClick={() => { setOfferStatusFilter('approved'); setPage(1); }}
+                >
+                  Offres publiées
+                </button>
+                <button
+                  className={`btn btn-sm ${offerStatusFilter === 'rejected' ? 'btn-primary' : 'btn-secondary'}`}
+                  type="button"
+                  onClick={() => { setOfferStatusFilter('rejected'); setPage(1); }}
+                >
+                  Offres rejetées
+                </button>
+                <button
+                  className={`btn btn-sm ${offerStatusFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+                  type="button"
+                  onClick={() => { setOfferStatusFilter('all'); setPage(1); }}
+                >
+                  Toutes
+                </button>
+              </div>
+              <div className="offer-summary-bar">
+                <p>{offers.length} offre(s) affichée(s) pour le filtre sélectionné.</p>
               </div>
               <div className="request-table-panel">
                 <div className="table-responsive">
@@ -626,8 +660,10 @@ function AdminDashboard() {
                     <thead>
                       <tr>
                         <th>Titre</th>
+                        <th>Entreprise</th>
                         <th>Catégorie</th>
                         <th>Status</th>
+                        <th>Publié</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -636,25 +672,38 @@ function AdminDashboard() {
                         <tr
                           key={offer._id}
                           className={selectedOffer?._id === offer._id ? 'selected-row' : ''}
-                          onClick={() => setSelectedOffer(offer)}
+                          onClick={() => { setSelectedOffer(offer); setEditedOffer({ ...offer }); setShowOfferDetails(true); }}
                         >
                           <td>{offer.title}</td>
+                          <td>{getOfferCompanyName(offer)}</td>
                           <td>{offer.mainCategory}</td>
                           <td>{offer.status}</td>
+                          <td>{getOfferPublishedLabel(offer)}</td>
                           <td>
                             <div className="admin-actions">
-                              <button
-                                className="btn btn-sm btn-primary"
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); setSelectedOffer(offer); setEditedOffer({ ...offer }); setShowOfferDetails(true); }}
-                              >
-                                Voir détails
-                              </button>
-                              {offer.status === 'pending' && (
-                                <button className="btn btn-success" type="button" onClick={(e) => { e.stopPropagation(); approveOffer(offer._id); }}>Approuver</button>
-                              )}
-                              {offer.status === 'pending' && (
-                                <button className="btn btn-warning" type="button" onClick={(e) => { e.stopPropagation(); rejectOffer(offer._id); }}>Rejeter</button>
+                              {offer.status === 'pending' ? (
+                                <>
+                                  <button
+                                    className="btn btn-sm btn-primary"
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setSelectedOffer(offer); setEditedOffer({ ...offer }); setShowOfferDetails(true); }}
+                                  >
+                                    Voir détails
+                                  </button>
+                                  <button className="btn btn-success" type="button" onClick={(e) => { e.stopPropagation(); approveOffer(offer._id); }}>Approuver</button>
+                                  <button className="btn btn-warning" type="button" onClick={(e) => { e.stopPropagation(); rejectOffer(offer._id); }}>Rejeter</button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    className="btn btn-sm btn-primary"
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setSelectedOffer(offer); setEditedOffer({ ...offer }); setShowOfferDetails(true); }}
+                                  >
+                                    Modifier
+                                  </button>
+                                  <button className="btn btn-danger" type="button" onClick={(e) => { e.stopPropagation(); deleteOffer(offer._id); }}>Supprimer</button>
+                                </>
                               )}
                             </div>
                           </td>
@@ -708,6 +757,7 @@ function AdminDashboard() {
                     <div className="request-detail-section">
                       <h5>Informations essentielles</h5>
                       <div className="detail-row"><span className="detail-label">Titre</span><input value={editedOffer?.title || ''} onChange={(e) => handleOfferFieldChange('title', e.target.value)} /></div>
+                      <div className="detail-row"><span className="detail-label">Entreprise</span><span className="detail-value">{getOfferCompanyName(selectedOffer)}</span></div>
                       <div className="detail-row"><span className="detail-label">Description</span><textarea rows="4" value={editedOffer?.description || ''} onChange={(e) => handleOfferFieldChange('description', e.target.value)} /></div>
                       <div className="detail-row"><span className="detail-label">Prix</span><input type="number" value={editedOffer?.price ?? ''} onChange={(e) => handleOfferFieldChange('price', e.target.value)} /></div>
                       <div className="detail-row"><span className="detail-label">Adresse</span><input value={editedOffer?.address || ''} onChange={(e) => handleOfferFieldChange('address', e.target.value)} /></div>
@@ -771,13 +821,15 @@ function AdminDashboard() {
                 ) : (
                   <div className="details-placeholder">
                     <p>Les détails de l'offre ne sont pas affichés.</p>
-                    <p>Cliquez sur <strong>Voir détails</strong> pour consulter et modifier l'annonce.</p>
+                    <p>Cliquez sur la ligne de l'offre ou sur le bouton <strong>Modifier</strong> pour consulter et modifier l'annonce.</p>
                   </div>
                 )}
               </div>
             </div>
-          ) : (
-            <p>Aucune offre en attente.</p>
+          {offers.length === 0 && (
+            <div className="no-offers-message">
+              <p>Aucune offre trouvée pour le filtre sélectionné ({offerStatusFilter === 'pending' ? 'En attente' : offerStatusFilter === 'approved' ? 'Publiées' : offerStatusFilter === 'rejected' ? 'Rejetées' : 'Toutes'}).</p>
+            </div>
           )}
           {pagination.pages > 1 && (
             <div className="pagination-row">

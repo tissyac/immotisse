@@ -59,11 +59,6 @@ const connectMongo = async () => {
 
 connectMongo();
 
-// route test
-app.get('/', (req, res) => {
-  res.json({ message: 'Serveur backend fonctionne 🚀' });
-});
-
 app.use('/promotions', promotionRoutes);
 app.use('/offers', offerRoutes);
 app.use('/auth', authRoutes);
@@ -72,6 +67,20 @@ app.use('/requests', requestRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/audit', auditRoutes);
 app.use('/messages', messageRoutes);
+
+// Servir le frontend construit si disponible
+const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
+
+// route de statut de l'API
+app.get('/api/status', (req, res) => {
+  res.json({ message: 'Serveur backend fonctionne 🚀' });
+});
 
 // lancement serveur
 const PORT = process.env.PORT || 3001;
