@@ -19,7 +19,7 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
       formData.append('file', file);
 
       try {
-        const res = await fetch('http://localhost:3008/upload/upload', {
+        const res = await fetch('https://immotisse.onrender.com/upload/upload', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData

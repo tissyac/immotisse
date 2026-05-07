@@ -30,7 +30,7 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('http://localhost:3008/upload/upload', {
+        const response = await fetch('https://immotisse.onrender.com/upload/upload', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData

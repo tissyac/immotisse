@@ -25,7 +25,7 @@ function OfferDetails() {
     try {
       setLoading(true);
       setError('');
-      const response = await fetch(`http://localhost:3008/offers/${id}`);
+      const response = await fetch(`https://immotisse.onrender.com/offers/${id}`);
       if (!response.ok) {
         throw new Error('Offre introuvable');
       }
@@ -81,7 +81,7 @@ function OfferDetails() {
 
   const formatMediaUrl = (src) => {
     if (!src) return '';
-    return src.startsWith('http') ? src : `http://localhost:3008${src}`;
+    return src.startsWith('http') ? src : `https://immotisse.onrender.com${src}`;
   };
 
   const getVideoType = (src) => {

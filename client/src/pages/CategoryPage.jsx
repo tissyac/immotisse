@@ -69,7 +69,7 @@ function CategoryPage() {
       if (params.city) queryString += `&city=${params.city}`;
       if (params.search) queryString += `&search=${params.search}`;
       
-      const response = await fetch(`http://localhost:3008/offers?${queryString}&limit=50`);
+      const response = await fetch(`https://immotisse.onrender.com/offers?${queryString}&limit=50`);
       const data = await response.json();
       
       if (!data.offers) {
@@ -93,7 +93,7 @@ function CategoryPage() {
       setError('');
       const subCategoryQuery = (category === 'vente' || category === 'location') && subcategory ? `&subCategory=${subcategory}` : '';
       const response = await fetch(
-        `http://localhost:3008/offers?status=approved&mainCategory=${category}${subCategoryQuery}&limit=50`
+        `https://immotisse.onrender.com/offers?status=approved&mainCategory=${category}${subCategoryQuery}&limit=50`
       );
       const data = await response.json();
       if (!data.offers) {
@@ -198,7 +198,7 @@ function CategoryPage() {
                     <Link key={offer._id} to={`/offer/${offer._id}`} className="offer-card">
                       <div className="offer-image">
                         {offer.images && offer.images.length > 0 ? (
-                          <img src={`http://localhost:3008${offer.images[0]}`} alt={offer.title} />
+                          <img src={`https://immotisse.onrender.com${offer.images[0]}`} alt={offer.title} />
                         ) : (
                           <div className="no-image">📷</div>
                         )}
@@ -272,7 +272,7 @@ function CategoryPage() {
                     <div className="offer-image-container">
                       {offer.images && offer.images.length > 0 ? (
                         <img
-                          src={`http://localhost:3008${offer.images[0]}`}
+                          src={`https://immotisse.onrender.com${offer.images[0]}`}
                           alt={offer.title}
                           className="offer-image"
                         />

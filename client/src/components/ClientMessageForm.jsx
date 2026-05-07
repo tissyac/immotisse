@@ -29,7 +29,7 @@ function ClientMessageForm({ offerId, onMessageSent }) {
     setMessage('');
 
     try {
-      const adminResponse = await fetch('http://localhost:3008/auth/admin-id', {
+      const adminResponse = await fetch('https://immotisse.onrender.com/auth/admin-id', {
         headers: user ? { Authorization: `Bearer ${token}` } : {}
       });
 
@@ -49,7 +49,7 @@ function ClientMessageForm({ offerId, onMessageSent }) {
           attachments: form.attachments
         };
 
-        const response = await fetch('http://localhost:3008/messages', {
+        const response = await fetch('https://immotisse.onrender.com/messages', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ function ClientMessageForm({ offerId, onMessageSent }) {
           offer: offerId
         };
 
-        const response = await fetch('http://localhost:3008/contacts', {
+        const response = await fetch('https://immotisse.onrender.com/contacts', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

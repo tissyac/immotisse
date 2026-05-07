@@ -28,7 +28,7 @@ function Home() {
       setError('');
 
       // Charger les comptes par catégorie
-      const response = await fetch('http://localhost:3008/offers?status=approved&limit=50');
+      const response = await fetch('https://immotisse.onrender.com/offers?status=approved&limit=50');
       const data = await response.json();
       if (!data.offers) {
         setError('Impossible de charger les données.');
@@ -170,7 +170,7 @@ function Home() {
               <div key={offer._id} className="recent-offer-card">
                 <div className="offer-image">
                   {offer.images && offer.images.length > 0 ? (
-                    <img src={`http://localhost:3008${offer.images[0]}`} alt={offer.title} />
+                    <img src={`https://immotisse.onrender.com${offer.images[0]}`} alt={offer.title} />
                   ) : (
                     <div className="no-image">📸</div>
                   )}

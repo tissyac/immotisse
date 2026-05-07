@@ -18,7 +18,7 @@ function AdminRequests() {
   const loadRequests = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('http://localhost:3008/requests', {
+      const res = await fetch('https://immotisse.onrender.com/requests', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Erreur lors du chargement');
@@ -35,7 +35,7 @@ function AdminRequests() {
     if (!window.confirm('Confirmer l\'approbation de cette demande?')) return;
 
     try {
-      const res = await fetch(`http://localhost:3008/requests/${id}/approve`, {
+      const res = await fetch(`https://immotisse.onrender.com/requests/${id}/approve`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ function AdminRequests() {
     if (!window.confirm('Confirmer le rejet de cette demande?')) return;
 
     try {
-      const res = await fetch(`http://localhost:3008/requests/${id}/reject`, {
+      const res = await fetch(`https://immotisse.onrender.com/requests/${id}/reject`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

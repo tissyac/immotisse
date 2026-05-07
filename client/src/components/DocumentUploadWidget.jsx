@@ -50,9 +50,9 @@ function DocumentUploadWidget({
     formData.append('file', file);
 
     try {
-      console.log('📤 Envoi à: http://localhost:3008/upload/uploadPublic');
+      console.log('📤 Envoi à: https://immotisse.onrender.com/upload/uploadPublic');
       
-      const res = await fetch('http://localhost:3008/upload/uploadPublic', {
+      const res = await fetch('https://immotisse.onrender.com/upload/uploadPublic', {
         method: 'POST',
         body: formData
       });

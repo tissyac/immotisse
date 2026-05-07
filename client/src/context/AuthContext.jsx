@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
 
   const verifyToken = async (tok) => {
     try {
-      const res = await fetch('http://localhost:3008/auth/verify', {
+      const res = await fetch('https://immotisse.onrender.com/auth/verify', {
         headers: { Authorization: `Bearer ${tok}` }
       });
       if (res.ok) {
@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const res = await fetch('http://localhost:3008/auth/login', {
+      const res = await fetch('https://immotisse.onrender.com/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
