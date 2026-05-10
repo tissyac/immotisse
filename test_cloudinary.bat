@@ -9,16 +9,16 @@ del temp_check.txt
 
 echo Current config: %RESULT%
 echo.
-echo Expected: "cloudName":"Immo"
+echo Expected: "cloudName":"dpv1axdqn"
 echo.
 
-if "%RESULT%"=="  "cloudName":"Immo"," (
+if "%RESULT%"=="  "cloudName":"dpv1axdqn"," (
     echo ✅ SUCCESS: Cloudinary config is correct!
     echo You can now test video uploads on https://immotisse-tksv.vercel.app
 ) else (
     echo ❌ FAIL: Still using old config
     echo Please update Render environment variables with:
-    echo CLOUDINARY_CLOUD_NAME=Immo
+    echo CLOUDINARY_CLOUD_NAME=dpv1axdqn
     echo CLOUDINARY_API_KEY=496569887828513
     echo CLOUDINARY_API_SECRET=leOfSPhBeMBcqDpVDqtk0wOxvGE
 )
