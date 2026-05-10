@@ -126,7 +126,7 @@ function PromoterDashboard() {
 
   const loadUserProfile = async () => {
     try {
-      const res = await fetch('http://localhost:3008/auth/me', {
+      const res = await fetch('https://immotisse.onrender.com/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Impossible de charger le profil');
@@ -185,7 +185,7 @@ function PromoterDashboard() {
   const saveProfile = async () => {
     setProfileStatus('Envoi de la demande de modification...');
     try {
-      const res = await fetch('http://localhost:3008/auth/me', {
+      const res = await fetch('https://immotisse.onrender.com/auth/me', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -208,7 +208,7 @@ function PromoterDashboard() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch('http://localhost:3008/auth/me', {
+      const res = await fetch('https://immotisse.onrender.com/auth/me', {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -248,7 +248,7 @@ function PromoterDashboard() {
 
     setPasswordStatus('Mise à jour du mot de passe...');
     try {
-      const res = await fetch('http://localhost:3008/auth/me/password', {
+      const res = await fetch('https://immotisse.onrender.com/auth/me/password', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -280,7 +280,7 @@ function PromoterDashboard() {
   const loadOffers = async () => {
     try {
       setStatus('Chargement des offres...');
-      const res = await fetch(`http://localhost:3008/offers/user/${user.userId}?page=${page}&limit=20`, {
+      const res = await fetch(`https://immotisse.onrender.com/offers/user/${user.userId}?page=${page}&limit=20`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Impossible de charger les offres');
@@ -296,9 +296,9 @@ function PromoterDashboard() {
   const loadMessages = async () => {
     try {
       const [sentRes, receivedRes, statsRes] = await Promise.all([
-        fetch('http://localhost:3008/messages/sent', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:3008/messages/received', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:3008/messages/admin/stats', { headers: { Authorization: `Bearer ${token}` } })
+        fetch('https://immotisse.onrender.com/messages/sent', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('https://immotisse.onrender.com/messages/received', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('https://immotisse.onrender.com/messages/admin/stats', { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       if (sentRes.ok) {
@@ -323,7 +323,7 @@ function PromoterDashboard() {
 
   const markMessageAsRead = async (messageId) => {
     try {
-      await fetch(`http://localhost:3008/messages/${messageId}/read`, {
+      await fetch(`https://immotisse.onrender.com/messages/${messageId}/read`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -351,13 +351,13 @@ function PromoterDashboard() {
 
     setCompanyMessageStatus('Envoi du message en cours...');
     try {
-      const adminRes = await fetch('http://localhost:3008/auth/admin-id', {
+      const adminRes = await fetch('https://immotisse.onrender.com/auth/admin-id', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!adminRes.ok) throw new Error('Impossible de récupérer l\'admin');
       const { adminId } = await adminRes.json();
 
-      const res = await fetch('http://localhost:3008/messages', {
+      const res = await fetch('https://immotisse.onrender.com/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -559,7 +559,7 @@ function PromoterDashboard() {
       });
     }
     try {
-      const url = editingOffer ? `http://localhost:3008/offers/${editingOffer._id}` : 'http://localhost:3008/offers';
+      const url = editingOffer ? `https://immotisse.onrender.com/offers/${editingOffer._id}` : 'https://immotisse.onrender.com/offers';
       const method = editingOffer ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
@@ -627,7 +627,7 @@ function PromoterDashboard() {
     }
     if (!window.confirm('Supprimer cette offre ?')) return;
     try {
-      const res = await fetch(`http://localhost:3008/offers/${offerId}`, {
+      const res = await fetch(`https://immotisse.onrender.com/offers/${offerId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

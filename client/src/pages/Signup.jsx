@@ -78,7 +78,7 @@ function Signup() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://localhost:3008/requests', {
+      const response = await fetch('https://immotisse.onrender.com/requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
