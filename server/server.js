@@ -76,6 +76,11 @@ app.use('/cloudinary', cloudinaryRoutes);
 app.use('/audit', auditRoutes);
 app.use('/messages', messageRoutes);
 
+// route de statut de l'API
+app.get('/api/status', (req, res) => {
+  res.json({ message: 'Serveur backend fonctionne 🚀' });
+});
+
 // Servir le frontend construit si disponible
 const clientBuildPath = path.resolve(__dirname, '..', 'client', 'dist');
 if (fs.existsSync(clientBuildPath)) {
@@ -85,10 +90,6 @@ if (fs.existsSync(clientBuildPath)) {
   });
 }
 
-// route de statut de l'API
-app.get('/api/status', (req, res) => {
-  res.json({ message: 'Serveur backend fonctionne 🚀' });
-});
 
 // lancement serveur
 const PORT = process.env.PORT || 3001;

@@ -9,6 +9,7 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [message, setMessage] = useState('');
   const fileInputRef = useRef(null);
+  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3008';
 
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files);
@@ -43,7 +44,7 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
       newProgress[file.name] = 0;
 
       try {
-        const signResponse = await fetch('https://immotisse.onrender.com/cloudinary/sign', {
+        const signResponse = await fetch(`${backendUrl}/cloudinary/sign`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!signResponse.ok) {

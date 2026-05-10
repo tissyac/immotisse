@@ -7,6 +7,8 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
 
+  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3008';
+
   const handleUpload = async (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -30,7 +32,7 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
 
     for (const file of files) {
       try {
-        const signResponse = await fetch('https://immotisse.onrender.com/cloudinary/sign', {
+        const signResponse = await fetch(`${backendUrl}/cloudinary/sign`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!signResponse.ok) {
