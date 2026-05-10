@@ -52,10 +52,17 @@ function DocumentUploadWidget({
     try {
       console.log('📤 Envoi à: https://immotisse.onrender.com/upload/uploadPublic');
       
-      const res = await fetch('https://immotisse.onrender.com/upload/uploadPublic', {
+      // Créer une promesse qui reject après 10 minutes
+      const uploadPromise = fetch('https://immotisse.onrender.com/upload/uploadPublic', {
         method: 'POST',
         body: formData
       });
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: Upload a dépassé 10 minutes')), 600000)
+      );
+
+      const res = await Promise.race([uploadPromise, timeoutPromise]);
 
       console.log('📊 Réponse status:', res.status);
       console.log('📊 Content-Type:', res.headers.get('content-type'));

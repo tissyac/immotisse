@@ -30,18 +30,26 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('https://immotisse.onrender.com/upload/upload', {
+        // Créer une promesse qui reject après 10 minutes (600000ms)
+        const uploadPromise = fetch('https://immotisse.onrender.com/upload/upload', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData
         });
+
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout: Upload a dépassé 10 minutes')), 600000)
+        );
+
+        const response = await Promise.race([uploadPromise, timeoutPromise]);
 
         if (response.ok) {
           const data = await response.json();
           newUploadedFiles.push(data.fileUrl);
           newProgress[file.name] = 100;
         } else {
-          console.error(`Erreur upload ${file.name}:`, response.statusText);
+          const err = await response.json();
+          console.error(`Erreur upload ${file.name}:`, err);
           newProgress[file.name] = -1; // Erreur
         }
       } catch (error) {

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { upload } = require('../services/cloudinaryService');
+const { upload, isCloudinaryConfigured } = require('../services/cloudinaryService');
 const { authMiddleware } = require('../middleware/authMiddleware');
 
 // POST : upload un fichier (authentifié)
@@ -22,7 +22,9 @@ router.post('/upload', authMiddleware, (req, res) => {
         });
       }
 
-      const fileUrl = req.file.path; // Cloudinary retourne l'URL complète
+      const fileUrl = isCloudinaryConfigured 
+        ? req.file.path  // Cloudinary retourne l'URL complète
+        : `https://immotisse.onrender.com/uploads/${req.file.filename}`; // Local storage
       console.log('✅ Upload réussi:', fileUrl);
       res.json({
         success: true,
@@ -66,7 +68,9 @@ router.post('/uploadPublic', (req, res) => {
         });
       }
 
-      const fileUrl = req.file.path; // Cloudinary retourne l'URL complète
+      const fileUrl = isCloudinaryConfigured 
+        ? req.file.path  // Cloudinary retourne l'URL complète
+        : `https://immotisse.onrender.com/uploads/${req.file.filename}`; // Local storage
       console.log('✅ Upload réussi:', fileUrl);
       res.json({
         success: true,
@@ -106,7 +110,9 @@ router.post('/uploadMultiple', authMiddleware, (req, res) => {
       }
 
       const files = req.files.map(file => ({
-        fileUrl: file.path, // Cloudinary retourne l'URL complète
+        fileUrl: isCloudinaryConfigured 
+          ? file.path  // Cloudinary retourne l'URL complète
+          : `https://immotisse.onrender.com/uploads/${file.filename}`, // Local storage
         filename: file.filename,
         size: file.size,
         mimetype: file.mimetype,

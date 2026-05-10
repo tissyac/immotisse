@@ -19,12 +19,18 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
       formData.append('file', file);
 
       try {
-        const res = await fetch('https://immotisse.onrender.com/upload/upload', {
+        // Créer une promesse qui reject après 10 minutes
+        const uploadPromise = fetch('https://immotisse.onrender.com/upload/upload', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData
         });
 
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout: Upload a dépassé 10 minutes')), 600000)
+        );
+
+        const res = await Promise.race([uploadPromise, timeoutPromise]);
         const data = await res.json();
 
         if (res.ok) {
