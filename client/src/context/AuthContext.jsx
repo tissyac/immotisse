@@ -22,6 +22,7 @@ export function AuthProvider({ children }) {
   const verifyToken = async (tok) => {
     try {
       const res = await fetch('https://immotisse.onrender.com/auth/verify', {
+        method: 'POST',
         headers: { Authorization: `Bearer ${tok}` }
       });
       if (res.ok) {

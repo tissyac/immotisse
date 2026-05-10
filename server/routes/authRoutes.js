@@ -60,6 +60,21 @@ router.post('/verify', (req, res) => {
   }
 });
 
+// GET : vérifier le token (compatibilité navigateur / GET)
+router.get('/verify', (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'Token manquant' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    res.json({ valid: true, user: decoded });
+  } catch (error) {
+    res.status(401).json({ message: 'Token invalide ou expiré' });
+  }
+});
+
 // GET : obtenir l'ID de l'admin (pour la messagerie)
 router.get('/admin-id', async (req, res) => {
   try {
