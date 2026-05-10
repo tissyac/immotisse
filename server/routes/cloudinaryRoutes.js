@@ -10,6 +10,13 @@ router.get('/sign', authMiddleware, (req, res) => {
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
   const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
 
+  console.log('Cloudinary config check:', {
+    cloudName: cloudName ? 'SET' : 'MISSING',
+    apiKey: apiKey ? 'SET' : 'MISSING',
+    apiSecret: apiSecret ? 'SET' : 'MISSING',
+    uploadPreset: uploadPreset || 'NOT_SET'
+  });
+
   if (!cloudName) {
     return res.status(500).json({ message: 'Cloudinary n\'est pas configuré correctement. CLOUDINARY_CLOUD_NAME manquant.' });
   }
