@@ -1,7 +1,18 @@
 const express = require('express');
+const cors = require('cors');
 const router = express.Router();
 const { upload, isCloudinaryConfigured } = require('../services/cloudinaryService');
 const { authMiddleware } = require('../middleware/authMiddleware');
+
+const corsOptions = {
+  origin: '*',
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type', 'Origin', 'X-Requested-With', 'Accept']
+};
+
+router.options('/upload', cors(corsOptions));
+router.options('/uploadPublic', cors(corsOptions));
+router.options('/uploadMultiple', cors(corsOptions));
 
 // POST : upload un fichier (authentifié)
 router.post('/upload', authMiddleware, (req, res) => {

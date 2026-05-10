@@ -13,6 +13,11 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
+    if (!token) {
+      alert('Token manquant : connectez-vous avant de télécharger un fichier.');
+      return;
+    }
+
     if (files.length > maxFiles) {
       alert(`Maximum ${maxFiles} fichiers autorisés`);
       return;

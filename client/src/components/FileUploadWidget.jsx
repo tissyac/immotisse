@@ -11,6 +11,11 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    if (!token) {
+      setMessage('❌ Token absent : connectez-vous avant de télécharger un fichier.');
+      return;
+    }
+
     setUploading(true);
     setMessage('');
 
