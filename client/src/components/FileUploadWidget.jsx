@@ -16,6 +16,15 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
       return;
     }
 
+    const MAX_FILE_SIZE = 90 * 1024 * 1024; // 90MB max to avoid Render/Cloudflare upload limits
+
+    for (const file of files) {
+      if (file.size > MAX_FILE_SIZE) {
+        setMessage('❌ Fichier trop volumineux. Taille maximale autorisée : 90MB.');
+        return;
+      }
+    }
+
     setUploading(true);
     setMessage('');
 

@@ -18,6 +18,15 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
       return;
     }
 
+    const MAX_FILE_SIZE = 90 * 1024 * 1024; // 90MB max to avoid Render/Cloudflare upload limits
+
+    for (const file of files) {
+      if (file.size > MAX_FILE_SIZE) {
+        alert('Un ou plusieurs fichiers dépassent la taille maximale autorisée de 90MB.');
+        return;
+      }
+    }
+
     if (files.length > maxFiles) {
       alert(`Maximum ${maxFiles} fichiers autorisés`);
       return;
