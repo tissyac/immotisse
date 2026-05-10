@@ -29,9 +29,9 @@ router.get('/sign', authMiddleware, (req, res) => {
   try {
     const timestamp = Math.round(Date.now() / 1000);
     const paramsToSign = {
-      timestamp,
       folder: 'immotisse-uploads',
-      resource_type: 'auto'
+      resource_type: 'auto',
+      timestamp
     };
     const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);
 
