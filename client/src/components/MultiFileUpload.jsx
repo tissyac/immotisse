@@ -68,7 +68,10 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
         // Créer une promesse qui reject après 10 minutes (600000ms)
         const uploadPromise = fetch(uploadUrl, {
           method: 'POST',
-          body: formData
+          body: formData,
+          headers: {
+            'Accept': 'application/json',
+          }
         });
 
         const timeoutPromise = new Promise((_, reject) => 

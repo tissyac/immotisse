@@ -54,7 +54,10 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
 
         const uploadPromise = fetch(uploadUrl, {
           method: 'POST',
-          body: formData
+          body: formData,
+          headers: {
+            'Accept': 'application/json',
+          }
         });
 
         const timeoutPromise = new Promise((_, reject) => 
