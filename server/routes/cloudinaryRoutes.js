@@ -28,12 +28,10 @@ router.get('/sign', authMiddleware, (req, res) => {
 
   try {
     const timestamp = Math.round(Date.now() / 1000);
-    // Pour les uploads signés, seuls certains paramètres sont inclus dans la signature
-    const paramsToSign = {
-      timestamp: timestamp,
-      folder: 'immotisse-uploads'
-    };
-    const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);
+    // Calcul manuel de la signature pour s'assurer de la correction
+    const paramsString = `folder=immotisse-uploads&timestamp=${timestamp}${apiSecret}`;
+    const crypto = require('crypto');
+    const signature = crypto.createHash('sha1').update(paramsString).digest('hex');
 
     res.json({
       apiKey,
