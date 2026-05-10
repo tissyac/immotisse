@@ -68,11 +68,13 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
           onFileUploaded(data.secure_url || data.url || data.fileUrl);
           setMessage(`✅ ${file.name} uploadé avec succès`);
         } else {
-          const errorMsg = data.error?.message || data.message || 'Erreur lors de l\'upload';
+          const errorMsg = data.error?.message || data.message || `Erreur Cloudinary (${res.status})`;
+          console.error('Erreur upload Cloudinary:', data);
           setMessage(`❌ Erreur: ${errorMsg}`);
         }
       } catch (err) {
-        setMessage(`❌ ${err.message}`);
+        console.error('Erreur upload:', err);
+        setMessage(`❌ Erreur réseau: ${err.message}`);
       }
     }
 

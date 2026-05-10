@@ -7,6 +7,7 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState({});
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [message, setMessage] = useState('');
   const fileInputRef = useRef(null);
 
   const handleFileSelect = async (e) => {
@@ -35,6 +36,7 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
     setUploading(true);
     const newProgress = {};
     const newUploadedFiles = [];
+    setMessage('');
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -81,11 +83,14 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
           newProgress[file.name] = 100;
         } else {
           const err = await response.json();
+          const errorMsg = err.error?.message || err.message || `Erreur upload (${response.status})`;
           console.error(`Erreur upload ${file.name}:`, err);
+          setMessage(`❌ ${file.name}: ${errorMsg}`);
           newProgress[file.name] = -1; // Erreur
         }
       } catch (error) {
         console.error(`Erreur upload ${file.name}:`, error);
+        setMessage(`❌ Erreur réseau: ${error.message}`);
         newProgress[file.name] = -1; // Erreur
       }
     }
@@ -168,6 +173,8 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
           <span>Upload en cours...</span>
         </div>
       )}
+
+      {message && <div className="alert" style={{ marginTop: 10 }}>{message}</div>}
 
       {uploadedFiles.length > 0 && (
         <div className="file-previews">
