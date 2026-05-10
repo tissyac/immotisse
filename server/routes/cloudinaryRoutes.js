@@ -28,10 +28,10 @@ router.get('/sign', authMiddleware, (req, res) => {
 
   try {
     const timestamp = Math.round(Date.now() / 1000);
+    // Pour les uploads signés, seuls certains paramètres sont inclus dans la signature
     const paramsToSign = {
-      folder: 'immotisse-uploads',
-      resource_type: 'auto',
-      timestamp
+      timestamp: timestamp,
+      folder: 'immotisse-uploads'
     };
     const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);
 
