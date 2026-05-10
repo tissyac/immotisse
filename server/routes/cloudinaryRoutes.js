@@ -14,16 +14,7 @@ router.get('/sign', authMiddleware, (req, res) => {
     return res.status(500).json({ message: 'Cloudinary n\'est pas configuré correctement. CLOUDINARY_CLOUD_NAME manquant.' });
   }
 
-  if (uploadPreset) {
-    return res.json({
-      cloudName,
-      uploadPreset,
-      folder: 'immotisse-uploads',
-      resourceType: 'auto',
-      unsigned: true
-    });
-  }
-
+  // Priorité à l'upload signé pour plus de sécurité et de contrôle
   if (!apiKey || !apiSecret) {
     return res.status(500).json({ message: 'Cloudinary n\'est pas configuré correctement. CLOUDINARY_API_KEY ou CLOUDINARY_API_SECRET manquant.' });
   }
