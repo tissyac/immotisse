@@ -295,11 +295,8 @@ function PromoterDashboard() {
 
   const loadMessages = async () => {
     try {
-      const [sentRes, receivedRes, statsRes] = await Promise.all([
-        fetch('https://immotisse.onrender.com/messages/sent', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('https://immotisse.onrender.com/messages/received', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('https://immotisse.onrender.com/messages/admin/stats', { headers: { Authorization: `Bearer ${token}` } })
-      ]);
+      const sentRes = await fetch('https://immotisse.onrender.com/messages/sent', { headers: { Authorization: `Bearer ${token}` } });
+      const receivedRes = await fetch('https://immotisse.onrender.com/messages/received', { headers: { Authorization: `Bearer ${token}` } });
 
       if (sentRes.ok) {
         const sentData = await sentRes.json();
@@ -315,6 +312,14 @@ function PromoterDashboard() {
           received: receivedData.length,
           unread: receivedData.filter(m => !m.isRead).length
         }));
+      }
+
+      if (user?.role === 'admin') {
+        const statsRes = await fetch('https://immotisse.onrender.com/messages/admin/stats', { headers: { Authorization: `Bearer ${token}` } });
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setMessageStats(prev => ({ ...prev, ...statsData }));
+        }
       }
     } catch (error) {
       console.error('Erreur chargement messages:', error);
