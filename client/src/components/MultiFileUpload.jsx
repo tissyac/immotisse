@@ -75,7 +75,7 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
         });
 
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: Upload a dépassé 10 minutes')), 600000)
+          setTimeout(() => reject(new Error('Timeout: Upload a dépassé 5 minutes')), 300000)
         );
 
         const response = await Promise.race([uploadPromise, timeoutPromise]);
@@ -86,7 +86,7 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
           newProgress[file.name] = 100;
         } else {
           const err = await response.json();
-          const errorMsg = err.error?.message || err.message || `Erreur upload (${response.status})`;
+          const errorMsg = err.error?.message || err.message || `Erreur upload (${response.status}): ${JSON.stringify(err)}`;
           console.error(`Erreur upload ${file.name}:`, err);
           setMessage(`❌ ${file.name}: ${errorMsg}`);
           newProgress[file.name] = -1; // Erreur

@@ -61,7 +61,7 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
         });
 
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: Upload a dépassé 10 minutes')), 600000)
+          setTimeout(() => reject(new Error('Timeout: Upload a dépassé 5 minutes')), 300000)
         );
 
         const res = await Promise.race([uploadPromise, timeoutPromise]);
@@ -71,7 +71,7 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
           onFileUploaded(data.secure_url || data.url || data.fileUrl);
           setMessage(`✅ ${file.name} uploadé avec succès`);
         } else {
-          const errorMsg = data.error?.message || data.message || `Erreur Cloudinary (${res.status})`;
+          const errorMsg = data.error?.message || data.message || `Erreur Cloudinary (${res.status}): ${JSON.stringify(data)}`;
           console.error('Erreur upload Cloudinary:', data);
           setMessage(`❌ Erreur: ${errorMsg}`);
         }
