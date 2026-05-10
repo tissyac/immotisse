@@ -5,8 +5,27 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 router.get('/sign', authMiddleware, (req, res) => {
-  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-    return res.status(500).json({ message: 'Cloudinary n\'est pas configuré correctement.' });
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+  const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName) {
+    return res.status(500).json({ message: 'Cloudinary n\'est pas configuré correctement. CLOUDINARY_CLOUD_NAME manquant.' });
+  }
+
+  if (uploadPreset) {
+    return res.json({
+      cloudName,
+      uploadPreset,
+      folder: 'immotisse-uploads',
+      resourceType: 'auto',
+      unsigned: true
+    });
+  }
+
+  if (!apiKey || !apiSecret) {
+    return res.status(500).json({ message: 'Cloudinary n\'est pas configuré correctement. CLOUDINARY_API_KEY ou CLOUDINARY_API_SECRET manquant.' });
   }
 
   try {
@@ -16,15 +35,16 @@ router.get('/sign', authMiddleware, (req, res) => {
       folder: 'immotisse-uploads',
       resource_type: 'auto'
     };
-    const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET);
+    const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);
 
     res.json({
-      apiKey: process.env.CLOUDINARY_API_KEY,
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey,
+      cloudName,
       timestamp,
       signature,
       folder: 'immotisse-uploads',
-      resourceType: 'auto'
+      resourceType: 'auto',
+      unsigned: false
     });
   } catch (error) {
     console.error('Erreur signature Cloudinary :', error);

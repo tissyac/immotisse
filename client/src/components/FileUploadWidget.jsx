@@ -42,9 +42,13 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
         const uploadUrl = `https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`;
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('api_key', signData.apiKey);
-        formData.append('timestamp', signData.timestamp);
-        formData.append('signature', signData.signature);
+        if (signData.unsigned) {
+          formData.append('upload_preset', signData.uploadPreset);
+        } else {
+          formData.append('api_key', signData.apiKey);
+          formData.append('timestamp', signData.timestamp);
+          formData.append('signature', signData.signature);
+        }
         formData.append('folder', signData.folder);
         formData.append('resource_type', signData.resourceType);
 
