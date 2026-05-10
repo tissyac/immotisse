@@ -16,11 +16,11 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
       return;
     }
 
-    const MAX_FILE_SIZE = 90 * 1024 * 1024; // 90MB max to avoid Render/Cloudflare upload limits
+    const MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1GB max
 
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
-        setMessage('❌ Fichier trop volumineux. Taille maximale autorisée : 90MB.');
+        setMessage('❌ Fichier trop volumineux. Taille maximale autorisée : 1GB.');
         return;
       }
     }
@@ -29,14 +29,27 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
     setMessage('');
 
     for (const file of files) {
-      const formData = new FormData();
-      formData.append('file', file);
-
       try {
-        // Créer une promesse qui reject après 10 minutes
-        const uploadPromise = fetch('https://immotisse.onrender.com/upload/upload', {
+        const signResponse = await fetch('https://immotisse.onrender.com/cloudinary/sign', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!signResponse.ok) {
+          const errorData = await signResponse.json();
+          throw new Error(errorData.message || 'Impossible de signer le fichier');
+        }
+
+        const signData = await signResponse.json();
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', signData.apiKey);
+        formData.append('timestamp', signData.timestamp);
+        formData.append('signature', signData.signature);
+        formData.append('folder', signData.folder);
+        formData.append('resource_type', signData.resourceType);
+
+        const uploadPromise = fetch(uploadUrl, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
           body: formData
         });
 
@@ -48,10 +61,10 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
         const data = await res.json();
 
         if (res.ok) {
-          onFileUploaded(data.fileUrl);
+          onFileUploaded(data.secure_url || data.url || data.fileUrl);
           setMessage(`✅ ${file.name} uploadé avec succès`);
         } else {
-          const errorMsg = data.message || 'Erreur lors de l\'upload';
+          const errorMsg = data.error?.message || data.message || 'Erreur lors de l\'upload';
           setMessage(`❌ Erreur: ${errorMsg}`);
         }
       } catch (err) {
