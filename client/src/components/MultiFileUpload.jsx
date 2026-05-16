@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 
 function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles = 10, label = 'Sélectionner des fichiers' }) {
   const { token } = useContext(AuthContext);
@@ -44,54 +45,45 @@ function MultiFileUpload({ onFilesUploaded, accept = 'image/*,video/*', maxFiles
       newProgress[file.name] = 0;
 
       try {
-        const signResponse = await fetch(`${backendUrl}/cloudinary/sign`, {
+        const isVideo = file.type.startsWith('video/');
+        const resourceType = isVideo ? 'video' : 'image';
+        const timeoutMs = isVideo ? 600000 : 300000; // 10min pour vidéos, 5min pour autres
+
+        const signResponse = await fetch(`${backendUrl}/cloudinary/sign?resourceType=${resourceType}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+
+        const signText = await signResponse.text();
         if (!signResponse.ok) {
-          const errorData = await signResponse.json();
+          let errorData;
+          try {
+            errorData = JSON.parse(signText);
+          } catch {
+            errorData = { message: signText };
+          }
           throw new Error(errorData.message || 'Impossible de signer le fichier');
         }
 
-        const signData = await signResponse.json();
-        const uploadUrl = `https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`;
-        const formData = new FormData();
-        formData.append('file', file);
-        if (signData.unsigned) {
-          formData.append('upload_preset', signData.uploadPreset);
-        } else {
-          formData.append('api_key', signData.apiKey);
-          formData.append('timestamp', signData.timestamp);
-          formData.append('signature', signData.signature);
+        let signData;
+        try {
+          signData = JSON.parse(signText);
+        } catch (parseError) {
+          throw new Error(`Réponse de signature invalide : ${signText}`);
         }
-        formData.append('folder', signData.folder);
-        formData.append('resource_type', signData.resourceType);
+        console.log(`🚀 Démarrage upload pour ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB) - Timeout: ${timeoutMs / 1000}s`);
 
-        // Créer une promesse qui reject après 10 minutes (600000ms)
-        const uploadPromise = fetch(uploadUrl, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Accept': 'application/json',
-          }
+        const uploadResult = await uploadToCloudinary(file, signData, timeoutMs, (percent) => {
+          newProgress[file.name] = percent;
+          setProgress({ ...newProgress });
         });
 
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: Upload a dépassé 5 minutes')), 300000)
-        );
-
-        const response = await Promise.race([uploadPromise, timeoutPromise]);
-
-        if (response.ok) {
-          const data = await response.json();
-          newUploadedFiles.push(data.secure_url || data.url || data.fileUrl);
-          newProgress[file.name] = 100;
-        } else {
-          const err = await response.json();
-          const errorMsg = err.error?.message || err.message || `Erreur upload (${response.status}): ${JSON.stringify(err)}`;
-          console.error(`Erreur upload ${file.name}:`, err);
-          setMessage(`❌ ${file.name}: ${errorMsg}`);
-          newProgress[file.name] = -1; // Erreur
+        const uploadedUrl = uploadResult.secure_url || uploadResult.url || uploadResult.fileUrl;
+        if (!uploadedUrl) {
+          throw new Error('Aucune URL renvoyée par Cloudinary après l\'upload.');
         }
+
+        newUploadedFiles.push(uploadedUrl);
+        newProgress[file.name] = 100;
       } catch (error) {
         console.error(`Erreur upload ${file.name}:`, error);
         setMessage(`❌ Erreur réseau: ${error.message}`);

@@ -8,23 +8,34 @@ router.get('/sign', authMiddleware, (req, res) => {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   const apiKey = process.env.CLOUDINARY_API_KEY;
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
-  const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
 
   if (!cloudName) {
     return res.status(500).json({ message: 'Cloudinary n\'est pas configuré correctement. CLOUDINARY_CLOUD_NAME manquant.' });
   }
 
-  // Priorité à l'upload signé pour plus de sécurité et de contrôle
   if (!apiKey || !apiSecret) {
     return res.status(500).json({ message: 'Cloudinary n\'est pas configuré correctement. CLOUDINARY_API_KEY ou CLOUDINARY_API_SECRET manquant.' });
   }
 
+  const allowedResourceTypes = ['auto', 'image', 'video'];
+  const requestedResourceType = (req.query.resourceType || 'auto').toLowerCase();
+  if (!allowedResourceTypes.includes(requestedResourceType)) {
+    return res.status(400).json({ message: 'ResourceType Cloudinary non valide.' });
+  }
+
+  const resourceType = requestedResourceType;
+
   try {
     const timestamp = Math.round(Date.now() / 1000);
-    // Calcul manuel de la signature pour s'assurer de la correction
-    const paramsString = `folder=immotisse-uploads&timestamp=${timestamp}${apiSecret}`;
-    const crypto = require('crypto');
-    const signature = crypto.createHash('sha1').update(paramsString).digest('hex');
+    const paramsToSign = {
+      folder: 'immotisse-uploads',
+      timestamp
+    };
+    if (resourceType !== 'auto') {
+      paramsToSign.resource_type = resourceType;
+    }
+
+    const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);
 
     res.json({
       apiKey,
@@ -32,7 +43,7 @@ router.get('/sign', authMiddleware, (req, res) => {
       timestamp,
       signature,
       folder: 'immotisse-uploads',
-      resourceType: 'auto',
+      resourceType,
       unsigned: false
     });
   } catch (error) {

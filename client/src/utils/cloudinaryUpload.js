@@ -1,0 +1,57 @@
+export async function uploadToCloudinary(file, signData, timeoutMs, onProgress = () => {}) {
+  return new Promise((resolve, reject) => {
+    const resourcePath = signData.resourceType === 'video' ? 'video' : signData.resourceType === 'image' ? 'image' : 'auto';
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${signData.cloudName}/${resourcePath}/upload`;
+    const formData = new FormData();
+
+    formData.append('file', file);
+    formData.append('api_key', signData.apiKey);
+    formData.append('timestamp', signData.timestamp);
+    formData.append('signature', signData.signature);
+    formData.append('folder', signData.folder);
+    formData.append('resource_type', signData.resourceType);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', uploadUrl, true);
+    xhr.timeout = timeoutMs;
+    xhr.responseType = 'json';
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        onProgress(percent);
+      }
+    };
+
+    xhr.onload = () => {
+      const response = xhr.response;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        return resolve(response);
+      }
+
+      let errorMessage = `Cloudinary upload failed with status ${xhr.status}`;
+      if (response && typeof response === 'object') {
+        errorMessage = response.error?.message || response.message || errorMessage;
+      } else if (xhr.responseText) {
+        try {
+          const parsed = JSON.parse(xhr.responseText);
+          errorMessage = parsed.error?.message || parsed.message || errorMessage;
+        } catch (parseError) {
+          console.warn('Unable to parse Cloudinary error response:', parseError);
+        }
+      }
+
+      reject(new Error(errorMessage));
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Erreur réseau pendant l’upload vers Cloudinary.')); 
+    };
+
+    xhr.ontimeout = () => {
+      reject(new Error(`Timeout: Upload a dépassé ${timeoutMs / 1000} secondes`));
+    };
+
+    xhr.send(formData);
+  });
+}

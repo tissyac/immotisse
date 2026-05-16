@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 
 function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 'Choisir un fichier' }) {
   const { token } = useContext(AuthContext);
@@ -31,55 +32,61 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
     setMessage('');
 
     for (const file of files) {
+      const isVideo = file.type.startsWith('video/');
       try {
-        const signResponse = await fetch(`${backendUrl}/cloudinary/sign`, {
+        const resourceType = isVideo ? 'video' : 'image';
+        const timeoutMs = isVideo ? 600000 : 300000; // 10min pour vidéos, 5min pour autres
+
+        const signResponse = await fetch(`${backendUrl}/cloudinary/sign?resourceType=${resourceType}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+
+        const signText = await signResponse.text();
         if (!signResponse.ok) {
-          const errorData = await signResponse.json();
+          let errorData;
+          try {
+            errorData = JSON.parse(signText);
+          } catch {
+            errorData = { message: signText };
+          }
           throw new Error(errorData.message || 'Impossible de signer le fichier');
         }
 
-        const signData = await signResponse.json();
-        const uploadUrl = `https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`;
-        const formData = new FormData();
-        formData.append('file', file);
-        if (signData.unsigned) {
-          formData.append('upload_preset', signData.uploadPreset);
-        } else {
-          formData.append('api_key', signData.apiKey);
-          formData.append('timestamp', signData.timestamp);
-          formData.append('signature', signData.signature);
+        let signData;
+        try {
+          signData = JSON.parse(signText);
+        } catch (parseError) {
+          throw new Error(`Réponse de signature invalide : ${signText}`);
         }
-        formData.append('folder', signData.folder);
-        formData.append('resource_type', signData.resourceType);
+        console.log(`🚀 Démarrage upload pour ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB) - Timeout: ${timeoutMs / 1000}s`);
 
-        const uploadPromise = fetch(uploadUrl, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Accept': 'application/json',
-          }
+        const uploadResult = await uploadToCloudinary(file, signData, timeoutMs, (percent) => {
+          setMessage(`⏳ ${file.name} : ${percent}%`);
         });
 
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: Upload a dépassé 5 minutes')), 300000)
-        );
-
-        const res = await Promise.race([uploadPromise, timeoutPromise]);
-        const data = await res.json();
-
-        if (res.ok) {
-          onFileUploaded(data.secure_url || data.url || data.fileUrl);
-          setMessage(`✅ ${file.name} uploadé avec succès`);
-        } else {
-          const errorMsg = data.error?.message || data.message || `Erreur Cloudinary (${res.status}): ${JSON.stringify(data)}`;
-          console.error('Erreur upload Cloudinary:', data);
-          setMessage(`❌ Erreur: ${errorMsg}`);
+        const uploadedUrl = uploadResult.secure_url || uploadResult.url || uploadResult.fileUrl;
+        if (!uploadedUrl) {
+          throw new Error('Aucune URL renvoyée par Cloudinary après l\'upload.');
         }
+
+        onFileUploaded(uploadedUrl);
+        setMessage(`✅ ${file.name} uploadé avec succès`);
+        console.log(`✅ Upload successful for ${file.name}`);
       } catch (err) {
-        console.error('Erreur upload:', err);
-        setMessage(`❌ Erreur réseau: ${err.message}`);
+        console.error(`❌ Erreur réseau pour ${file.name}:`, err);
+        
+        // Message d'erreur spécifique selon le type d'erreur
+        if (err.message.includes('Failed to fetch')) {
+          if (isVideo) {
+            setMessage(`❌ Erreur réseau pour ${file.name}: Vérifiez votre connexion internet. Les vidéos volumineuses peuvent prendre du temps.`);
+          } else {
+            setMessage(`❌ Erreur réseau: Impossible de contacter Cloudinary. Vérifiez votre connexion internet.`);
+          }
+        } else if (err.message.includes('Timeout')) {
+          setMessage(`❌ Timeout: ${file.name} est trop volumineux ou votre connexion est lente. Essayez avec un fichier plus petit.`);
+        } else {
+          setMessage(`❌ Erreur réseau: ${err.message}`);
+        }
       }
     }
 
