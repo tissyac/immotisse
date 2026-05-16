@@ -56,7 +56,7 @@ export async function uploadToCloudinary(file, signData, timeoutMs, onProgress =
 
     xhr.onerror = () => {
       console.error('❌ XHR onerror triggered - vérifiez la connexion réseau ou CORS');
-      reject(new Error('Erreur réseau pendant l'upload vers Cloudinary.')); 
+      reject(new Error("Erreur réseau pendant l'upload vers Cloudinary.")); 
     };
 
     xhr.ontimeout = () => {
