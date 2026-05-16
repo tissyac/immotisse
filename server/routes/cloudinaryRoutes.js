@@ -86,15 +86,13 @@ router.post('/sign', authMiddleware, express.json(), (req, res) => {
     const paramsToSign = incoming.params || incoming;
 
     // Filtrer les clés vides et s'assurer que les valeurs sont des chaînes
+    // IMPORTANT: ne pas ajouter max_file_size à la signature
+    // (Cloudinary ne le reconnaît pas comme param signable)
     const filtered = {};
     Object.keys(paramsToSign || {}).forEach((k) => {
       const v = paramsToSign[k];
       if (v !== undefined && v !== null && String(v) !== '') filtered[k] = String(v);
     });
-
-    // Ajouter max_file_size aux paramètres à signer (1 GB)
-    // IMPORTANT: must be signed for Cloudinary to accept large files
-    filtered.max_file_size = String(1024 * 1024 * 1024); // 1 GB en bytes
 
     // Si aucun param fourni, refuse
     if (Object.keys(filtered).length === 0) {
@@ -102,6 +100,7 @@ router.post('/sign', authMiddleware, express.json(), (req, res) => {
     }
 
     // Construire la string à signer (paramètres en ordre alphabétique)
+    // Signer SEULEMENT les paramètres du widget (source, timestamp, folder)
     const sortedKeys = Object.keys(filtered).sort();
     const paramString = sortedKeys.map((key) => `${key}=${filtered[key]}`).join('&');
     const stringToSign = `${paramString}${apiSecret}`;
@@ -113,12 +112,13 @@ router.post('/sign', authMiddleware, express.json(), (req, res) => {
       signature 
     });
 
-    // Retourner TOUS les paramètres signés incluant max_file_size
+    // Retourner params signés (sans max_file_size) + signature séparé + max_file_size séparé
     res.json({
       apiKey,
       cloudName,
       signature,
-      upload_params: filtered  // Tous les params signés
+      upload_params: filtered,  // Seulement params signés du widget
+      max_file_size: String(1024 * 1024 * 1024)  // 1 GB séparé, non signé
     });
   } catch (error) {
     console.error('Erreur signature Cloudinary (POST):', error);

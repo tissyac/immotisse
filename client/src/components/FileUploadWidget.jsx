@@ -73,27 +73,25 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
               maxFileSize: 1024 * 1024 * 1024,
               clientAllowedFormats: ['mp4', 'mov', 'mkv', 'webm'],
               prepareUploadParams: (cb, params) => {
-                // Ajouter max_file_size AVANT d'envoyer pour signature
-                const paramsWithMaxSize = Object.assign({}, params, {
-                  max_file_size: String(1024 * 1024 * 1024) // 1 GB
-                });
-                
+                // Envoyer les params du widget tels quels (source, timestamp, folder)
+                // Le serveur les signera SANS ajouter max_file_size à la signature
                 fetch(`${backendUrl}/cloudinary/sign`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
                   },
-                  body: JSON.stringify({ params: paramsWithMaxSize })
+                  body: JSON.stringify({ params })
                 })
                   .then((r) => r.json())
                   .then((data) => {
-                    // Les upload_params contiennent les paramètres signés (incluant max_file_size signé)
+                    // Combiner: params signés + signature + api_key + max_file_size (non signé)
                     const out = Object.assign({}, data.upload_params || {}, { 
                       signature: data.signature, 
                       api_key: data.apiKey
+                      // max_file_size retourné du serveur mais n'est pas inclus dans la signature
                     });
-                    console.log('✅ Params prêts pour upload (max_file_size signé):', out);
+                    console.log('✅ Params prêts pour upload:', out);
                     cb(out);
                   })
                   .catch((err) => {
