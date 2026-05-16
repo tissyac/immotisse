@@ -9,7 +9,7 @@ export async function uploadToCloudinary(file, signData, timeoutMs, onProgress =
     formData.append('timestamp', signData.timestamp);
     formData.append('signature', signData.signature);
     formData.append('folder', signData.folder);
-    formData.append('resource_type', signData.resourceType);
+    // NOTE: resource_type est dans l'URL, pas dans le formulaire!
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', uploadUrl, true);

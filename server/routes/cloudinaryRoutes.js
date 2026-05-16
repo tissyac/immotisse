@@ -30,13 +30,11 @@ router.get('/sign', authMiddleware, (req, res) => {
     const timestamp = Math.round(Date.now() / 1000);
     
     // Créer les paramètres à signer (dans l'ordre alphabétique)
+    // NOTE: resource_type est dans l'URL (/video/upload), pas dans le formulaire
     const paramsToSign = {
       folder: 'immotisse-uploads',
       timestamp: timestamp.toString()
     };
-    if (resourceType !== 'auto') {
-      paramsToSign.resource_type = resourceType;
-    }
 
     // Créer la string à signer : paramètres en ordre alphabétique + clé secrète
     const sortedKeys = Object.keys(paramsToSign).sort();
@@ -45,6 +43,14 @@ router.get('/sign', authMiddleware, (req, res) => {
     
     // Calculer la signature SHA-1
     const signature = crypto.createHash('sha1').update(stringToSign).digest('hex');
+
+    // DEBUG: Log pour vérifier la signature
+    console.log('📋 DEBUG Signature Cloudinary:');
+    console.log('  - paramsToSign:', paramsToSign);
+    console.log('  - sortedKeys:', sortedKeys);
+    console.log('  - stringToSign (sans secret):', paramString);
+    console.log('  - signature:', signature);
+    console.log('  - resourceType envoyé:', resourceType);
 
     res.json({
       apiKey,
