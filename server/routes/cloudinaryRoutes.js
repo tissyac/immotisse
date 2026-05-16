@@ -109,14 +109,12 @@ router.post('/sign', authMiddleware, express.json(), (req, res) => {
 
     console.log('🔐 Widget signature request:', { filtered, paramString, signature });
 
+    // Retourner TOUS les paramètres signés (Cloudinary s'attend à les recevoir tous)
     res.json({
       apiKey,
       cloudName,
       signature,
-      upload_params: {
-        folder: filtered.folder || 'immotisse-uploads',
-        max_file_size: filtered.max_file_size
-      }
+      upload_params: filtered  // Retourner tous les params signés (folder, source, timestamp, max_file_size, etc.)
     });
   } catch (error) {
     console.error('Erreur signature Cloudinary (POST):', error);

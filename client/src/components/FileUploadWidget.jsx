@@ -89,12 +89,12 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
                 })
                   .then((r) => r.json())
                   .then((data) => {
-                    // Fournir signature, api_key et max_file_size au widget
+                    // Les upload_params contiennent TOUS les paramètres signés
                     const out = Object.assign({}, data.upload_params || {}, { 
                       signature: data.signature, 
-                      api_key: data.apiKey,
-                      max_file_size: data.upload_params?.max_file_size
+                      api_key: data.apiKey
                     });
+                    console.log('✅ Params prêts pour upload:', out);
                     cb(out);
                   })
                   .catch((err) => {
