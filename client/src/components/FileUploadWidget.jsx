@@ -37,6 +37,79 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
         const resourceType = isVideo ? 'video' : 'image';
         const timeoutMs = isVideo ? 600000 : 300000; // 10min pour vidéos, 5min pour autres
 
+        // Pour les vidéos volumineuses, utiliser le Cloudinary Upload Widget (signed)
+        if (isVideo) {
+          // Demander confirmation car le widget ouvrira un sélecteur séparé
+          const proceed = window.confirm('Les vidéos volumineuses sont téléchargées via le widget Cloudinary. Continuer ?');
+          if (!proceed) {
+            setMessage('Upload vidéo annulé par l\'utilisateur.');
+            continue;
+          }
+
+          // Charger dynamiquement le script du widget si nécessaire
+          await new Promise((resolve, reject) => {
+            if (window.cloudinary && window.cloudinary.openUploadWidget) return resolve();
+            const s = document.createElement('script');
+            s.src = 'https://upload-widget.cloudinary.com/latest/global/all.js';
+            s.onload = () => resolve();
+            s.onerror = (err) => reject(new Error('Impossible de charger le Cloudinary Upload Widget'));
+            document.head.appendChild(s);
+          });
+
+          // Récupérer cloudName et apiKey depuis le backend (GET sign retourne apiKey/cloudName)
+          const infoRes = await fetch(`${backendUrl}/cloudinary/sign?resourceType=video`, { headers: { Authorization: `Bearer ${token}` } });
+          if (!infoRes.ok) throw new Error('Impossible d\'obtenir la configuration Cloudinary.');
+          const info = await infoRes.json();
+
+          // Ouvrir le widget en mode signed en utilisant prepareUploadParams
+          const widget = window.cloudinary.openUploadWidget(
+            {
+              cloudName: info.cloudName,
+              api_key: info.apiKey,
+              folder: 'immotisse-uploads',
+              resourceType: 'video',
+              multiple: false,
+              clientAllowedFormats: ['mp4', 'mov', 'mkv', 'webm'],
+              prepareUploadParams: (cb, params) => {
+                // params contient le timestamp et d'autres champs fournis par le widget
+                fetch(`${backendUrl}/cloudinary/sign`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ params })
+                })
+                  .then((r) => r.json())
+                  .then((data) => {
+                    // Fournir signature et api_key au widget
+                    const out = Object.assign({}, data.upload_params || {}, { signature: data.signature, api_key: data.apiKey });
+                    cb(out);
+                  })
+                  .catch((err) => {
+                    console.error('Erreur prepareUploadParams:', err);
+                    cb({ cancel: true });
+                  });
+              }
+            },
+            (err, result) => {
+              if (!err && result && result.event === 'success') {
+                const uploadedUrl = result.info.secure_url || result.info.url;
+                onFileUploaded(uploadedUrl);
+                setMessage(`✅ ${result.info.original_filename || file.name} uploadé avec succès`);
+              } else if (err) {
+                console.error('Widget error:', err);
+                setMessage(`❌ Erreur widget: ${err.message || err}`);
+              }
+            }
+          );
+
+          widget.open();
+          // attente asynchrone : widget gère le reste, continuer vers le prochain fichier
+          continue;
+        }
+
+        // Flow standard pour images et petits fichiers
         const signResponse = await fetch(`${backendUrl}/cloudinary/sign?resourceType=${resourceType}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
