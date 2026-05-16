@@ -74,18 +74,27 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
               clientAllowedFormats: ['mp4', 'mov', 'mkv', 'webm'],
               prepareUploadParams: (cb, params) => {
                 // params contient le timestamp et d'autres champs fournis par le widget
+                // Ajouter max_file_size pour les vidéos volumineuses
+                const paramsWithMaxSize = Object.assign({}, params, {
+                  max_file_size: String(1024 * 1024 * 1024) // 1 GB
+                });
+                
                 fetch(`${backendUrl}/cloudinary/sign`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
                   },
-                  body: JSON.stringify({ params })
+                  body: JSON.stringify({ params: paramsWithMaxSize })
                 })
                   .then((r) => r.json())
                   .then((data) => {
-                    // Fournir signature et api_key au widget
-                    const out = Object.assign({}, data.upload_params || {}, { signature: data.signature, api_key: data.apiKey });
+                    // Fournir signature, api_key et max_file_size au widget
+                    const out = Object.assign({}, data.upload_params || {}, { 
+                      signature: data.signature, 
+                      api_key: data.apiKey,
+                      max_file_size: data.upload_params?.max_file_size
+                    });
                     cb(out);
                   })
                   .catch((err) => {

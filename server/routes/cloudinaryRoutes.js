@@ -92,6 +92,10 @@ router.post('/sign', authMiddleware, express.json(), (req, res) => {
       if (v !== undefined && v !== null && String(v) !== '') filtered[k] = String(v);
     });
 
+    // Ajouter max_file_size pour autoriser les fichiers jusqu'à 1 GB
+    // (paramètre autorisé en uploads signés pour surcharger la limite par défaut de 100 MB)
+    filtered.max_file_size = String(1024 * 1024 * 1024); // 1 GB en bytes
+
     // Si aucun param fourni, refuse
     if (Object.keys(filtered).length === 0) {
       return res.status(400).json({ message: 'Aucun paramètre à signer fourni.' });
@@ -110,7 +114,8 @@ router.post('/sign', authMiddleware, express.json(), (req, res) => {
       cloudName,
       signature,
       upload_params: {
-        folder: filtered.folder || 'immotisse-uploads'
+        folder: filtered.folder || 'immotisse-uploads',
+        max_file_size: filtered.max_file_size
       }
     });
   } catch (error) {
