@@ -3,7 +3,7 @@ import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 
-function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 'Choisir un fichier' }) {
+function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 'Choisir un fichier', fileType = null }) {
   const { token } = useContext(AuthContext);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
@@ -159,10 +159,10 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-        {/* Bouton pour les images */}
+      {/* Afficher le bouton image seulement si fileType === 'image' ou fileType = null */}
+      {(fileType === null || fileType === 'image') && (
         <label className="upload-label">
-          <span>📷 Ajouter une image</span>
+          <span>Sélectionner fichier</span>
           <input
             type="file"
             onChange={handleImageUpload}
@@ -171,8 +171,10 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
             multiple
           />
         </label>
+      )}
 
-        {/* Bouton pour les vidéos */}
+      {/* Afficher le bouton vidéo seulement si fileType === 'video' ou fileType = null */}
+      {(fileType === null || fileType === 'video') && (
         <button
           onClick={handleVideoUpload}
           disabled={uploading}
@@ -183,12 +185,13 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
             border: 'none',
             borderRadius: '4px',
             cursor: uploading ? 'not-allowed' : 'pointer',
-            opacity: uploading ? 0.6 : 1
+            opacity: uploading ? 0.6 : 1,
+            marginLeft: fileType === null ? '10px' : '0'
           }}
         >
-          🎬 Ajouter une vidéo
+          Ajouter une vidéo
         </button>
-      </div>
+      )}
 
       {uploading && <span>Upload en cours...</span>}
       {message && <div className="alert" style={{ marginTop: 10 }}>{message}</div>}

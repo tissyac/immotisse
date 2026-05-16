@@ -1329,6 +1329,7 @@ function PromoterDashboard() {
                             onFileUploaded={handleFileUploaded} 
                             accept="image/*" 
                             label="Cliquez ou glissez les photos ici" 
+                            fileType="image"
                           />
                           <div className="format-info">JPG, PNG • Max 5MB/photo</div>
                         </div>
@@ -1377,6 +1378,7 @@ function PromoterDashboard() {
                             onFileUploaded={handleVideoUploaded} 
                             accept="video/*" 
                             label="Cliquez ou glissez la vidéo ici" 
+                            fileType="video"
                           />
                           <div className="format-info">MP4, MOV • Max 50MB</div>
                         </div>
