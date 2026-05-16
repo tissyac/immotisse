@@ -69,6 +69,8 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
               folder: 'immotisse-uploads',
               resourceType: 'video',
               multiple: false,
+              // Allow uploads up to 1GB
+              maxFileSize: 1024 * 1024 * 1024,
               clientAllowedFormats: ['mp4', 'mov', 'mkv', 'webm'],
               prepareUploadParams: (cb, params) => {
                 // params contient le timestamp et d'autres champs fournis par le widget
