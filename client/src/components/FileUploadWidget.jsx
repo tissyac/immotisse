@@ -37,15 +37,8 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
         const resourceType = isVideo ? 'video' : 'image';
         const timeoutMs = isVideo ? 600000 : 300000; // 10min pour vidéos, 5min pour autres
 
-        // Pour les vidéos volumineuses, utiliser le Cloudinary Upload Widget (signed)
+        // Pour les vidéos, utiliser le Cloudinary Upload Widget (signed)
         if (isVideo) {
-          // Demander confirmation car le widget ouvrira un sélecteur séparé
-          const proceed = window.confirm('Les vidéos volumineuses sont téléchargées via le widget Cloudinary. Continuer ?');
-          if (!proceed) {
-            setMessage('Upload vidéo annulé par l\'utilisateur.');
-            continue;
-          }
-
           // Charger dynamiquement le script du widget si nécessaire
           await new Promise((resolve, reject) => {
             if (window.cloudinary && window.cloudinary.openUploadWidget) return resolve();
@@ -69,9 +62,12 @@ function FileUploadWidget({ onFileUploaded, accept = 'image/*,video/*', label = 
               folder: 'immotisse-uploads',
               resourceType: 'video',
               multiple: false,
-              // Allow uploads up to 1GB
               maxFileSize: 1024 * 1024 * 1024,
               clientAllowedFormats: ['mp4', 'mov', 'mkv', 'webm'],
+              // Optimisations pour plus de vitesse
+              chunkSize: 10000000, // 10MB chunks (défaut est plus petit)
+              maxConcurrentRequests: 4, // Upload 4 chunks en parallèle
+              retryStrategy: 'exponential', // Retry avec délai exponentiel
               prepareUploadParams: (cb, params) => {
                 // Envoyer les params du widget tels quels (source, timestamp, folder)
                 // Le serveur les signera SANS ajouter max_file_size à la signature
