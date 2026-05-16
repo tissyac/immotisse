@@ -2,6 +2,16 @@ export async function uploadToCloudinary(file, signData, timeoutMs, onProgress =
   return new Promise((resolve, reject) => {
     const resourcePath = signData.resourceType === 'video' ? 'video' : signData.resourceType === 'image' ? 'image' : 'auto';
     const uploadUrl = `https://api.cloudinary.com/v1_1/${signData.cloudName}/${resourcePath}/upload`;
+    
+    console.log('🚀 uploadToCloudinary démarrage:', {
+      fileName: file.name,
+      fileSize: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+      resourcePath,
+      uploadUrl: uploadUrl.replace(signData.cloudName, '[CLOUD_NAME]'),
+      timeoutMs,
+      timeoutSeconds: timeoutMs / 1000
+    });
+    
     const formData = new FormData();
 
     formData.append('file', file);
@@ -45,10 +55,12 @@ export async function uploadToCloudinary(file, signData, timeoutMs, onProgress =
     };
 
     xhr.onerror = () => {
-      reject(new Error('Erreur réseau pendant l’upload vers Cloudinary.')); 
+      console.error('❌ XHR onerror triggered - vérifiez la connexion réseau ou CORS');
+      reject(new Error('Erreur réseau pendant l'upload vers Cloudinary.')); 
     };
 
     xhr.ontimeout = () => {
+      console.warn('⏱️ XHR timeout après', timeoutMs / 1000, 'secondes');
       reject(new Error(`Timeout: Upload a dépassé ${timeoutMs / 1000} secondes`));
     };
 
