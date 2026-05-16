@@ -26,16 +26,25 @@ router.get('/sign', authMiddleware, (req, res) => {
   const resourceType = requestedResourceType;
 
   try {
+    const crypto = require('crypto');
     const timestamp = Math.round(Date.now() / 1000);
+    
+    // Créer les paramètres à signer (dans l'ordre alphabétique)
     const paramsToSign = {
       folder: 'immotisse-uploads',
-      timestamp
+      timestamp: timestamp.toString()
     };
     if (resourceType !== 'auto') {
       paramsToSign.resource_type = resourceType;
     }
 
-    const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);
+    // Créer la string à signer : paramètres en ordre alphabétique + clé secrète
+    const sortedKeys = Object.keys(paramsToSign).sort();
+    const paramString = sortedKeys.map(key => `${key}=${paramsToSign[key]}`).join('&');
+    const stringToSign = `${paramString}${apiSecret}`;
+    
+    // Calculer la signature SHA-1
+    const signature = crypto.createHash('sha1').update(stringToSign).digest('hex');
 
     res.json({
       apiKey,
