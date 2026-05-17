@@ -105,13 +105,41 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
       status: 'approved'
     });
 
-    await user.save();
-    console.log('✅ Utilisateur créé:', user._id);
+    try {
+      await user.save();
+      console.log('✅ Utilisateur créé:', user._id);
 
-    request.status = 'approved';
-    request.adminNote = adminNote || 'Approuvée par l\'administration';
-    await request.save();
-    console.log('✅ Demande approuvée');
+      request.status = 'approved';
+      request.adminNote = adminNote || 'Approuvée par l\'administration';
+      await request.save();
+      console.log('✅ Demande approuvée');
+    } catch (saveError) {
+      // Gérer les erreurs de clef dupliquée (utilisateur déjà existant)
+      console.error('⚠️ Erreur création utilisateur:', saveError.message);
+      if (saveError.code === 11000) {
+        // Trouver l'utilisateur existant et continuer
+        const existingUser = await User.findOne({ companyEmail: request.companyEmail }) || await User.findOne({ username: request.companyEmail });
+        if (existingUser) {
+          console.log('ℹ️ Utilisateur existe déjà:', existingUser._id);
+          request.status = 'approved';
+          request.adminNote = adminNote || 'Approuvée (utilisateur existant)';
+          await request.save();
+          console.log('✅ Demande approuvée (utilisateur existant)');
+
+          // Ne pas exposer de mot de passe, indiquer que l'utilisateur existe
+          return res.json({
+            success: true,
+            message: 'Demande approuvée — utilisateur existant',
+            username: existingUser.username || existingUser.companyEmail,
+            note: 'L\'utilisateur existait déjà, aucun nouveau compte créé.'
+          });
+        }
+      }
+
+      // Si autre erreur, la renvoyer
+      console.error('❌ Impossible de créer l\'utilisateur:', saveError);
+      return res.status(500).json({ success: false, message: 'Erreur lors de la création de l\'utilisateur', error: saveError.message });
+    }
 
     // Audit log (sans crash si erreur)
     try {
