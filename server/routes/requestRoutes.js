@@ -117,65 +117,68 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
       });
     }
 
+    // Générer mot de passe et hash
     const generatedPassword = Math.random().toString(36).slice(-10);
     const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
-    const user = new User({
-      username: request.companyEmail,
-      password: hashedPassword,
-      name: request.name,
-      firstName: request.firstName || '',
-      birthDate: request.birthDate,
-      birthPlace: request.birthPlace,
-      nin: request.nin ? String(request.nin) : '',
-      ninDocument: request.ninDocument,
-      phone: request.phone,
-      companyName: request.companyName,
-      companyType: request.companyType || 'promoteur',
-      companyAddress: request.companyAddress,
-      companyLocation: request.companyLocation,
-      companyPhone: request.companyPhone,
-      companyEmail: request.companyEmail,
-      rcNumber: request.rcNumber ? String(request.rcNumber) : '',
-      rcDocument: request.rcDocument,
-      hasAgreement: request.hasAgreement,
-      status: 'approved'
-    });
+    // Préparer les données pour insertion atomique
+    const filter = { $or: [{ companyEmail: request.companyEmail }, { username: request.companyEmail }] };
+    const update = {
+      $setOnInsert: {
+        username: request.companyEmail,
+        password: hashedPassword,
+        name: request.name,
+        firstName: request.firstName || '',
+        birthDate: request.birthDate,
+        birthPlace: request.birthPlace,
+        nin: request.nin ? String(request.nin) : '',
+        ninDocument: request.ninDocument,
+        phone: request.phone,
+        companyName: request.companyName,
+        companyType: request.companyType || 'promoteur',
+        companyAddress: request.companyAddress,
+        companyLocation: request.companyLocation,
+        companyPhone: request.companyPhone,
+        companyEmail: request.companyEmail,
+        rcNumber: request.rcNumber ? String(request.rcNumber) : '',
+        rcDocument: request.rcDocument,
+        hasAgreement: request.hasAgreement,
+        status: 'approved'
+      }
+    };
 
     try {
-      await user.save();
-      console.log('✅ Utilisateur créé:', user._id);
+      // Utiliser rawResult pour détecter si l'opération a inséré un document
+      const raw = await User.findOneAndUpdate(filter, update, { upsert: true, new: true, setDefaultsOnInsert: true, rawResult: true });
+      const created = !!(raw && raw.lastErrorObject && raw.lastErrorObject.upserted);
+      const userDoc = raw.value;
 
-      request.status = 'approved';
-      request.adminNote = adminNote || 'Approuvée par l\'administration';
-      await request.save();
-      console.log('✅ Demande approuvée');
-    } catch (saveError) {
-      // Gérer les erreurs de clef dupliquée (utilisateur déjà existant)
-      console.error('⚠️ Erreur création utilisateur:', saveError.message);
-      if (saveError.code === 11000) {
-        // Trouver l'utilisateur existant et continuer
-        const existingUser = await User.findOne({ companyEmail: request.companyEmail }) || await User.findOne({ username: request.companyEmail });
-        if (existingUser) {
-          console.log('ℹ️ Utilisateur existe déjà:', existingUser._id);
-          request.status = 'approved';
-          request.adminNote = adminNote || 'Approuvée (utilisateur existant)';
-          await request.save();
-          console.log('✅ Demande approuvée (utilisateur existant)');
-
-          // Ne pas exposer de mot de passe, indiquer que l'utilisateur existe
-          return res.json({
-            success: true,
-            message: 'Demande approuvée — utilisateur existant',
-            username: existingUser.username || existingUser.companyEmail,
-            note: 'L\'utilisateur existait déjà, aucun nouveau compte créé.'
-          });
-        }
+      if (created) {
+        console.log('✅ Utilisateur créé (upsert):', userDoc._id);
+      } else {
+        console.log('ℹ️ Utilisateur déjà existant trouvé après upsert:', userDoc._id);
       }
 
-      // Si autre erreur, la renvoyer
-      console.error('❌ Impossible de créer l\'utilisateur:', saveError);
-      return res.status(500).json({ success: false, message: 'Erreur lors de la création de l\'utilisateur', error: saveError.message });
+      // Mettre à jour la demande
+      request.status = 'approved';
+      request.adminNote = adminNote || (created ? 'Approuvée par l\'administration' : 'Approuvée (utilisateur existant)');
+      await request.save();
+      console.log('✅ Demande approuvée');
+
+      // Si utilisateur existant (non créé), notifier en conséquence
+      if (!created) {
+        console.log('📧 [approve] Notifier utilisateur existant via sendExistingUserEmail');
+        try {
+          await sendExistingUserEmail(userDoc.companyEmail || userDoc.username, userDoc.username || userDoc.companyEmail, request.companyName);
+        } catch (notifyError) {
+          console.warn('⚠️ Erreur notification utilisateur existant:', notifyError.message);
+        }
+        return res.json({ success: true, message: 'Demande approuvée — utilisateur existant', username: userDoc.username || userDoc.companyEmail });
+      }
+
+    } catch (saveError) {
+      console.error('❌ Impossible de créer ou récupérer l\'utilisateur:', saveError);
+      return res.status(500).json({ success: false, message: 'Erreur lors de la création ou récupération de l\'utilisateur', error: saveError.message });
     }
 
     // Audit log (sans crash si erreur)
