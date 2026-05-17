@@ -149,9 +149,20 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
 
     try {
       // Utiliser rawResult pour détecter si l'opération a inséré un document
-      const raw = await User.findOneAndUpdate(filter, update, { upsert: true, new: true, setDefaultsOnInsert: true, rawResult: true });
+      const raw = await User.findOneAndUpdate(filter, update, { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true, rawResult: true });
       const created = !!(raw && raw.lastErrorObject && raw.lastErrorObject.upserted);
-      const userDoc = raw.value;
+      let userDoc = raw && raw.value ? raw.value : null;
+
+      // Fallback: if raw.value undefined, try to fetch the user document directly
+      if (!userDoc) {
+        console.warn('⚠️ [approve] raw.value undefined after upsert, raw:', raw);
+        userDoc = await User.findOne({ $or: [{ companyEmail: request.companyEmail }, { username: request.companyEmail }] });
+      }
+
+      if (!userDoc) {
+        console.error('❌ [approve] Impossible de récupérer le document utilisateur après upsert. raw:', raw);
+        throw new Error('Utilisateur non récupéré après upsert');
+      }
 
       if (created) {
         console.log('✅ Utilisateur créé (upsert):', userDoc._id);
