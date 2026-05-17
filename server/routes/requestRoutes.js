@@ -155,10 +155,11 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
     // Envoyer un email (sans crash si erreur)
     let emailStatus = { success: false, error: 'non envoyé' };
     try {
+      console.log('📧 [approve] Appel sendApprovalEmail pour:', request.companyEmail);
       emailStatus = await sendApprovalEmail(request.companyEmail, request.companyEmail, generatedPassword, request.companyName);
-      console.log('✅ Email approbation résultat:', emailStatus);
+      console.log('📧 [approve] Résultat sendApprovalEmail:', emailStatus);
     } catch (emailError) {
-      console.error('⚠️  Erreur email approbation:', emailError.message);
+      console.error('⚠️  [approve] Erreur email approbation:', emailError.message, emailError);
       emailStatus = { success: false, error: emailError.message };
     }
 

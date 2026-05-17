@@ -38,12 +38,20 @@ const initEmailService = () => {
 
 const sendApprovalEmail = async (email, username, password, companyName) => {
   try {
-    if (!transporter) initEmailService();
+    console.log('📧 [sendApprovalEmail] START - email:', email, 'transporter exists:', !!transporter);
+    
+    if (!transporter) {
+      console.log('📧 [sendApprovalEmail] transporter undefined, initializing...');
+      initEmailService();
+    }
+    
     if (!transporter) {
       const errorMessage = 'SMTP non initialisé. Vérifiez SMTP_USER et SMTP_PASS dans .env.';
-      console.error('❌', errorMessage);
+      console.error('❌ [sendApprovalEmail]', errorMessage);
       return { success: false, error: errorMessage };
     }
+
+    console.log('📧 [sendApprovalEmail] transporter ready, from:', process.env.SMTP_USER);
 
     const mailOptions = {
       from: process.env.SMTP_USER || 'noreply@immotiss.com',
@@ -80,10 +88,10 @@ const sendApprovalEmail = async (email, username, password, companyName) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent to ${email}:`, result.messageId);
+    console.log(`✅ [sendApprovalEmail] Email sent successfully to ${email}:`, result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
-    console.error('❌ Erreur lors de l\'envoi du mail:', error);
+    console.error('❌ [sendApprovalEmail] Erreur lors de l\'envoi du mail:', error.message, error);
     return { success: false, error: error.message || error.toString() || 'Erreur inconnue lors de l\'envoi' };
   }
 };
