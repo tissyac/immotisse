@@ -2,6 +2,8 @@ import React, { createContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
+const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
@@ -21,7 +23,7 @@ export function AuthProvider({ children }) {
 
   const verifyToken = async (tok) => {
     try {
-      const res = await fetch('https://immotisse.onrender.com/auth/verify', {
+      const res = await fetch(`${API_URL}/auth/verify`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${tok}` }
       });
@@ -43,7 +45,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const res = await fetch('https://immotisse.onrender.com/auth/login', {
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

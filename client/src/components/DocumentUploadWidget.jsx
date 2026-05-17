@@ -9,6 +9,7 @@ function DocumentUploadWidget({
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
   const [fileName, setFileName] = useState('');
+  const backendUrl = import.meta.env.VITE_API_URL || window.location.origin;
   const [error, setError] = useState('');
 
   const handleUpload = async (e) => {
@@ -50,10 +51,10 @@ function DocumentUploadWidget({
     formData.append('file', file);
 
     try {
-      console.log('📤 Envoi à: https://immotisse.onrender.com/upload/uploadPublic');
+      console.log(`📤 Envoi à: ${backendUrl}/upload/uploadPublic`);
       
       // Créer une promesse qui reject après 10 minutes
-      const uploadPromise = fetch('https://immotisse.onrender.com/upload/uploadPublic', {
+      const uploadPromise = fetch(`${backendUrl}/upload/uploadPublic`, {
         method: 'POST',
         body: formData
       });
@@ -137,6 +138,12 @@ function DocumentUploadWidget({
       {message && (
         <div className={`message ${message.includes('✅') ? 'success' : 'error'}`}>
           {message}
+        </div>
+      )}
+
+      {value && !uploading && (
+        <div className="file-info success">
+          ✅ Document sauvegardé et prêt à envoyer
         </div>
       )}
 

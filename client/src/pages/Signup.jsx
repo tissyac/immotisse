@@ -72,21 +72,47 @@ function Signup() {
     );
   };
 
+  const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+
   const submit = async (event) => {
     event.preventDefault();
     setMessage('');
     setIsSubmitting(true);
 
+    // Vérifier que les documents obligatoires sont uploadés
+    if (!form.ninDocument) {
+      setMessageType('error');
+      setMessage('❌ Veuillez uploader votre document NIN/Passeport');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!form.rcDocument) {
+      setMessageType('error');
+      setMessage('❌ Veuillez uploader votre document Registre de Commerce (RC)');
+      setIsSubmitting(false);
+      return;
+    }
+
+    console.log('📤 Envoi de la demande:', {
+      ...form,
+      ninDocument: form.ninDocument ? '✅ présent' : '❌ manquant',
+      rcDocument: form.rcDocument ? '✅ présent' : '❌ manquant'
+    });
+
     try {
-      const response = await fetch('https://immotisse.onrender.com/requests', {
+      const response = await fetch(`${API_URL}/requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
       });
 
+      const responseData = await response.json();
+      
       if (response.ok) {
         setMessageType('success');
         setMessage('✓ Demande envoyée avec succès! L\'admin validera votre compte prochainement.');
+        console.log('✅ Demande envoyée:', responseData);
         setForm({
           name: '',
           firstName: '',
@@ -96,6 +122,7 @@ function Signup() {
           nin: '',
           ninDocument: '',
           companyName: '',
+          companyType: 'promoteur',
           companyPhone: '',
           companyAddress: '',
           companyLocation: '',
@@ -105,11 +132,13 @@ function Signup() {
         });
       } else {
         setMessageType('error');
-        setMessage('✕ Erreur lors de l\'envoi du formulaire. Veuillez réessayer.');
+        setMessage(`❌ Erreur: ${responseData.message || 'Erreur lors de l\'envoi du formulaire. Veuillez réessayer.'}`);
+        console.error('❌ Erreur serveur:', responseData);
       }
     } catch (error) {
       setMessageType('error');
-      setMessage('✕ Erreur réseau. Veuillez vérifier votre connexion.');
+      setMessage(`❌ Erreur réseau: ${error.message}`);
+      console.error('❌ Erreur:', error);
     } finally {
       setIsSubmitting(false);
     }

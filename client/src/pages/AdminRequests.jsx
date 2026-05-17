@@ -2,6 +2,8 @@ import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import '../styles/admin-requests.css';
 
+const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+
 function AdminRequests() {
   const { token } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
@@ -18,7 +20,7 @@ function AdminRequests() {
   const loadRequests = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('https://immotisse.onrender.com/requests', {
+      const res = await fetch(`${API_URL}/requests`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Erreur lors du chargement');
@@ -35,7 +37,7 @@ function AdminRequests() {
     if (!window.confirm('Confirmer l\'approbation de cette demande?')) return;
 
     try {
-      const res = await fetch(`https://immotisse.onrender.com/requests/${id}/approve`, {
+      const res = await fetch(`${API_URL}/requests/${id}/approve`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +71,7 @@ function AdminRequests() {
     if (!window.confirm('Confirmer le rejet de cette demande?')) return;
 
     try {
-      const res = await fetch(`https://immotisse.onrender.com/requests/${id}/reject`, {
+      const res = await fetch(`${API_URL}/requests/${id}/reject`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -261,7 +263,7 @@ function AdminRequests() {
               </section>
 
               {/* NIN Document */}
-              {selectedRequest.ninDocument && (
+              {selectedRequest.ninDocument ? (
                 <section className="detail-section">
                   <h3>📄 Document NIN/Passeport</h3>
                   {selectedRequest.ninDocument.includes('.pdf') ? (
@@ -281,12 +283,21 @@ function AdminRequests() {
                         src={selectedRequest.ninDocument}
                         alt="NIN Document"
                         style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '8px' }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = '<p style="color: red;">❌ Impossible de charger l\'image. Vérifiez le lien: ' + selectedRequest.ninDocument + '</p>';
+                        }}
                       />
                       <a href={selectedRequest.ninDocument} target="_blank" rel="noopener noreferrer" className="doc-link">
                         📥 Voir l'image en grand
                       </a>
                     </div>
                   )}
+                </section>
+              ) : (
+                <section className="detail-section" style={{ backgroundColor: '#fee2e2', padding: '15px', borderRadius: '8px' }}>
+                  <h3>⚠️ Document NIN/Passeport manquant</h3>
+                  <p style={{ color: '#dc2626' }}>Le demandeur n'a pas fourni de document NIN/Passeport.</p>
                 </section>
               )}
 
@@ -324,7 +335,7 @@ function AdminRequests() {
               </section>
 
               {/* RC Document */}
-              {selectedRequest.rcDocument && (
+              {selectedRequest.rcDocument ? (
                 <section className="detail-section">
                   <h3>📋 Document Registre de Commerce (RC)</h3>
                   {selectedRequest.rcDocument.includes('.pdf') ? (
@@ -344,6 +355,10 @@ function AdminRequests() {
                         src={selectedRequest.rcDocument}
                         alt="RC Document"
                         style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '8px' }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = '<p style="color: red;">❌ Impossible de charger l\'image. Vérifiez le lien: ' + selectedRequest.rcDocument + '</p>';
+                        }}
                       />
                       <a href={selectedRequest.rcDocument} target="_blank" rel="noopener noreferrer" className="doc-link">
                         📥 Voir l'image en grand
@@ -351,11 +366,18 @@ function AdminRequests() {
                     </div>
                   )}
                 </section>
+              ) : (
+                <section className="detail-section" style={{ backgroundColor: '#fee2e2', padding: '15px', borderRadius: '8px' }}>
+                  <h3>⚠️ Document Registre de Commerce manquant</h3>
+                  <p style={{ color: '#dc2626' }}>Le demandeur n'a pas fourni de document Registre de Commerce (RC).</p>
+                </section>
               )}
 
               {/* Action Buttons */}
               {selectedRequest.status === 'pending' && (
                 <section className="detail-section action-section">
+                  <h3>⚙️ Actions</h3>
+                  
                   <div className="action-buttons">
                     <button
                       className="btn btn-approve"
@@ -363,20 +385,15 @@ function AdminRequests() {
                     >
                       ✅ Approuver cette Demande
                     </button>
-                    <button
-                      className="btn btn-reject"
-                      onClick={() => document.querySelector('.rejection-form')?.focus()}
-                    >
-                      ❌ Rejeter cette Demande
-                    </button>
                   </div>
 
-                  <div className="rejection-form" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
+                  <div className="rejection-form" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #ddd' }}>
+                    <h4 style={{ margin: '0' }}>Ou Rejeter la Demande:</h4>
                     <label style={{ fontWeight: '600' }}>Raison du rejet:</label>
                     <textarea
                       value={rejectionReason}
                       onChange={(e) => setRejectionReason(e.target.value)}
-                      placeholder="Indiquez la raison du rejet..."
+                      placeholder="Indiquez la raison du rejet... (ex: documents invalides, informations manquantes)"
                       style={{
                         padding: '12px',
                         border: '2px solid #ddd',
@@ -387,11 +404,11 @@ function AdminRequests() {
                       }}
                     />
                     <button
-                      className="btn btn-confirm-reject"
+                      className="btn btn-reject"
                       onClick={() => rejectRequest(selectedRequest._id)}
                       disabled={!rejectionReason.trim()}
                     >
-                      ✓ Confirmer le Rejet
+                      ❌ Confirmer le Rejet
                     </button>
                   </div>
                 </section>

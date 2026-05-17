@@ -2,6 +2,8 @@ import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import '../styles/admin-dashboard-clean.css';
 
+const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+
 function AdminDashboard() {
   const { user, token } = useContext(AuthContext);
   const [tab, setTab] = useState('requests'); // requests, offers, contacts, audit, stats
@@ -66,7 +68,7 @@ function AdminDashboard() {
 
   const loadRequests = async () => {
     try {
-      const res = await fetch('https://immotisse.onrender.com/requests', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_URL}/requests`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('Erreur lors du chargement');
       const data = await res.json();
       setRequests(data);
@@ -80,7 +82,7 @@ function AdminDashboard() {
   const loadOffers = async () => {
     try {
       const statusQuery = offerStatusFilter && offerStatusFilter !== 'all' ? `&status=${offerStatusFilter}` : '';
-      const res = await fetch(`https://immotisse.onrender.com/offers/admin/all?page=${page}${statusQuery}`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_URL}/offers/admin/all?page=${page}${statusQuery}`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('Erreur lors du chargement');
       const data = await res.json();
       setOffers(data.offers || []);
@@ -103,7 +105,7 @@ function AdminDashboard() {
 
   const loadContacts = async () => {
     try {
-      const res = await fetch('https://immotisse.onrender.com/contacts', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_URL}/contacts`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('Erreur lors du chargement des messages clients');
       const data = await res.json();
       setContacts(data);
@@ -114,7 +116,7 @@ function AdminDashboard() {
 
   const loadUsers = async () => {
     try {
-      const res = await fetch('https://immotisse.onrender.com/auth/users', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_URL}/auth/users`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('Erreur lors du chargement des utilisateurs');
       const data = await res.json();
       setUsers(data);
@@ -139,7 +141,7 @@ function AdminDashboard() {
 
     try {
       console.log('Envoi de la requête DELETE...');
-      const res = await fetch(`https://immotisse.onrender.com/auth/users/${userId}`, {
+      const res = await fetch(`${API_URL}/auth/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -179,7 +181,7 @@ function AdminDashboard() {
 
   const loadMessages = async () => {
     try {
-      const res = await fetch('https://immotisse.onrender.com/messages/admin/all', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_URL}/messages/admin/all`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('Erreur lors du chargement des messages entreprises');
       const allMessages = await res.json();
       const companyMessages = allMessages.filter(msg => msg.type === 'company_to_admin');
@@ -196,7 +198,7 @@ function AdminDashboard() {
     }
 
     try {
-      const res = await fetch('https://immotisse.onrender.com/messages', {
+      const res = await fetch(`${API_URL}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -237,7 +239,7 @@ function AdminDashboard() {
 
   const loadAuditLogs = async () => {
     try {
-      let url = `https://immotisse.onrender.com/audit?page=${auditPage}&limit=20`;
+      let url = `${API_URL}/audit?page=${auditPage}&limit=20`;
       if (auditFilters.action) url += `&action=${auditFilters.action}`;
       if (auditFilters.entity) url += `&entity=${auditFilters.entity}`;
       if (auditFilters.dateRange) url += `&dateRange=${auditFilters.dateRange}`;
@@ -273,8 +275,8 @@ function AdminDashboard() {
     setStatsError('');
     try {
       const [offersRes, auditRes] = await Promise.all([
-        fetch('https://immotisse.onrender.com/offers/admin/stats/overview', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('https://immotisse.onrender.com/audit/stats/overview', { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${API_URL}/offers/admin/stats/overview`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_URL}/audit/stats/overview`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       const parseJson = async (res) => {
@@ -320,7 +322,7 @@ function AdminDashboard() {
 
   const approveRequest = async (id, email) => {
     try {
-      const res = await fetch(`https://immotisse.onrender.com/requests/${id}/approve`, {
+      const res = await fetch(`${API_URL}/requests/${id}/approve`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -334,7 +336,7 @@ function AdminDashboard() {
 
   const rejectRequest = async (id) => {
     try {
-      const res = await fetch(`https://immotisse.onrender.com/requests/${id}/reject`, {
+      const res = await fetch(`${API_URL}/requests/${id}/reject`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -348,7 +350,7 @@ function AdminDashboard() {
 
   const approveOffer = async (id) => {
     try {
-      const res = await fetch(`https://immotisse.onrender.com/offers/${id}/approve`, {
+      const res = await fetch(`${API_URL}/offers/${id}/approve`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -366,7 +368,7 @@ function AdminDashboard() {
 
   const rejectOffer = async (id) => {
     try {
-      const res = await fetch(`https://immotisse.onrender.com/offers/${id}/reject`, {
+      const res = await fetch(`${API_URL}/offers/${id}/reject`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -385,7 +387,7 @@ function AdminDashboard() {
 
   const deleteOffer = async (id) => {
     try {
-      const res = await fetch(`https://immotisse.onrender.com/offers/${id}`, {
+      const res = await fetch(`${API_URL}/offers/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -435,7 +437,7 @@ function AdminDashboard() {
       payload.viabilise = String(payload.viabilise) === 'true' || payload.viabilise === true;
       payload.changeable = String(payload.changeable) === 'true' || payload.changeable === true;
 
-      const res = await fetch(`https://immotisse.onrender.com/offers/${selectedOffer._id}`, {
+      const res = await fetch(`${API_URL}/offers/${selectedOffer._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -457,7 +459,7 @@ function AdminDashboard() {
 
   const formatOfferMediaUrl = (src) => {
     if (!src) return '';
-    return src.startsWith('http') ? src : `https://immotisse.onrender.com${src}`;
+    return src.startsWith('http') ? src : `${API_URL}${src}`;
   };
 
   const getOfferVideoType = (src) => {
@@ -590,8 +592,8 @@ function AdminDashboard() {
 
                   <div className="request-detail-section">
                     <h5>Documents</h5>
-                    <div className="detail-row"><span className="detail-label">CIN / NIN document</span><span className="detail-value">{selectedRequest.ninDocument ? <a href={`https://immotisse.onrender.com${selectedRequest.ninDocument}`} target="_blank" rel="noreferrer">Voir le document</a> : 'Aucun document'}</span></div>
-                    <div className="detail-row"><span className="detail-label">Registre de commerce</span><span className="detail-value">{selectedRequest.rcDocument ? <a href={`https://immotisse.onrender.com${selectedRequest.rcDocument}`} target="_blank" rel="noreferrer">Voir le document</a> : 'Aucun document'}</span></div>
+                    <div className="detail-row"><span className="detail-label">CIN / NIN document</span><span className="detail-value">{selectedRequest.ninDocument ? <a href={`${API_URL}${selectedRequest.ninDocument}`} target="_blank" rel="noreferrer">Voir le document</a> : 'Aucun document'}</span></div>
+                    <div className="detail-row"><span className="detail-label">Registre de commerce</span><span className="detail-value">{selectedRequest.rcDocument ? <a href={`${API_URL}${selectedRequest.rcDocument}`} target="_blank" rel="noreferrer">Voir le document</a> : 'Aucun document'}</span></div>
                   </div>
 
                   <div className="request-detail-section">
@@ -1011,13 +1013,13 @@ function AdminDashboard() {
                       {selectedUser.ninDocument.match(/\.(pdf|jpg|jpeg|png|gif|webp)$/i) ? (
                         selectedUser.ninDocument.match(/\.pdf$/i) ? (
                           <div className="document-preview-item">
-                            <a href={`https://immotisse.onrender.com${selectedUser.ninDocument}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                            <a href={`${API_URL}${selectedUser.ninDocument}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
                               📥 Télécharger le PDF
                             </a>
                           </div>
                         ) : (
                           <div className="document-preview-item">
-                            <img src={`https://immotisse.onrender.com${selectedUser.ninDocument}`} alt="Carte d'Identité" style={{ maxWidth: '300px', maxHeight: '300px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=Document+indisponible'; }} />
+                            <img src={`${API_URL}${selectedUser.ninDocument}`} alt="Carte d'Identité" style={{ maxWidth: '300px', maxHeight: '300px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=Document+indisponible'; }} />
                           </div>
                         )
                       ) : null}
@@ -1045,13 +1047,13 @@ function AdminDashboard() {
                       {selectedUser.rcDocument.match(/\.(pdf|jpg|jpeg|png|gif|webp)$/i) ? (
                         selectedUser.rcDocument.match(/\.pdf$/i) ? (
                           <div className="document-preview-item">
-                            <a href={`https://immotisse.onrender.com${selectedUser.rcDocument}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                            <a href={`${API_URL}${selectedUser.rcDocument}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
                               📥 Télécharger le PDF
                             </a>
                           </div>
                         ) : (
                           <div className="document-preview-item">
-                            <img src={`https://immotisse.onrender.com${selectedUser.rcDocument}`} alt="Registre de Commerce" style={{ maxWidth: '300px', maxHeight: '300px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=Document+indisponible'; }} />
+                            <img src={`${API_URL}${selectedUser.rcDocument}`} alt="Registre de Commerce" style={{ maxWidth: '300px', maxHeight: '300px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=Document+indisponible'; }} />
                           </div>
                         )
                       ) : null}
@@ -1119,14 +1121,14 @@ function AdminDashboard() {
                           <div key={index} className="attachment-item">
                             {attachment.match(/\.(pdf|jpg|jpeg|png|gif|webp)$/i) ? (
                               attachment.match(/\.pdf$/i) ? (
-                                <a href={`https://immotisse.onrender.com${attachment}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                                <a href={`${API_URL}${attachment}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
                                   📄 Télécharger le PDF
                                 </a>
                               ) : (
-                                <img src={`https://immotisse.onrender.com${attachment}`} alt={`Pièce jointe ${index + 1}`} style={{ maxWidth: '200px', maxHeight: '200px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/200?text=Image+indisponible'; }} />
+                                <img src={`${API_URL}${attachment}`} alt={`Pièce jointe ${index + 1}`} style={{ maxWidth: '200px', maxHeight: '200px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/200?text=Image+indisponible'; }} />
                               )
                             ) : (
-                              <a href={`https://immotisse.onrender.com${attachment}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                              <a href={`${API_URL}${attachment}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
                                 📎 Télécharger le fichier
                               </a>
                             )}

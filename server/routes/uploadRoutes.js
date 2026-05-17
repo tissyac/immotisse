@@ -33,9 +33,12 @@ router.post('/upload', authMiddleware, (req, res) => {
         });
       }
 
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['x-forwarded-host'] || req.get('host');
+      const baseUrl = `${protocol}://${host}`;
       const fileUrl = isCloudinaryConfigured 
         ? req.file.path  // Cloudinary retourne l'URL complète
-        : `https://immotisse.onrender.com/uploads/${req.file.filename}`; // Local storage
+        : `${baseUrl}/uploads/${req.file.filename}`; // Local storage
       console.log('✅ Upload réussi:', fileUrl);
       res.json({
         success: true,
@@ -79,9 +82,12 @@ router.post('/uploadPublic', (req, res) => {
         });
       }
 
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['x-forwarded-host'] || req.get('host');
+      const baseUrl = `${protocol}://${host}`;
       const fileUrl = isCloudinaryConfigured 
         ? req.file.path  // Cloudinary retourne l'URL complète
-        : `https://immotisse.onrender.com/uploads/${req.file.filename}`; // Local storage
+        : `${baseUrl}/uploads/${req.file.filename}`; // Local storage
       console.log('✅ Upload réussi:', fileUrl);
       res.json({
         success: true,
@@ -120,10 +126,13 @@ router.post('/uploadMultiple', authMiddleware, (req, res) => {
         });
       }
 
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['x-forwarded-host'] || req.get('host');
+      const baseUrl = `${protocol}://${host}`;
       const files = req.files.map(file => ({
         fileUrl: isCloudinaryConfigured 
           ? file.path  // Cloudinary retourne l'URL complète
-          : `https://immotisse.onrender.com/uploads/${file.filename}`, // Local storage
+          : `${baseUrl}/uploads/${file.filename}`, // Local storage
         filename: file.filename,
         size: file.size,
         mimetype: file.mimetype,

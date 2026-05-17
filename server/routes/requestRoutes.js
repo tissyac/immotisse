@@ -11,12 +11,47 @@ const { logAction } = require('../services/auditService');
 // POST : envoyer une demande
 router.post('/', async (req, res) => {
   try {
+    const { ninDocument, rcDocument } = req.body;
+
+    // Vérifier les documents obligatoires
+    if (!ninDocument) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Document NIN/Passeport manquant' 
+      });
+    }
+
+    if (!rcDocument) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Document Registre de Commerce manquant' 
+      });
+    }
+
+    console.log('📝 Nouvelle demande reçue:', {
+      name: req.body.name,
+      companyName: req.body.companyName,
+      ninDocument: ninDocument ? '✅ présent' : '❌ manquant',
+      rcDocument: rcDocument ? '✅ présent' : '❌ manquant'
+    });
+
     const request = new Request(req.body);
     await request.save();
-    res.send("Demande envoyée ✅");
+    
+    console.log('✅ Demande sauvegardée:', request._id);
+    
+    res.json({ 
+      success: true, 
+      message: "Demande envoyée ✅",
+      requestId: request._id
+    });
   } catch (error) {
-    console.log(error);
-    res.status(500).send("Erreur serveur");
+    console.error('❌ Erreur création demande:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Erreur serveur lors de l'enregistrement de la demande",
+      error: error.message
+    });
   }
 });
 
