@@ -45,21 +45,29 @@ function AdminRequests() {
         },
         body: JSON.stringify({ adminNote: 'Approuvée par l\'administration' })
       });
+      
+      console.log('📤 Response status:', res.status);
       const data = await res.json();
-      const emailError = data.emailStatus?.error || data.emailError || (data.emailStatus ? JSON.stringify(data.emailStatus) : null);
+      console.log('📥 Response data:', data);
+      
       if (!res.ok) {
-        setStatus(`❌ Erreur serveur: ${data.error || data.message || res.statusText}`);
-      } else if (!data.emailStatus?.success) {
-        setStatus(`⚠️ Demande approuvée mais erreur email: ${emailError || 'Inconnue'}`);
+        setStatus(`❌ Erreur serveur (${res.status}): ${data.message || data.error || 'Erreur inconnue'}`);
+        console.error('❌ Erreur approbation:', data);
       } else {
-        setStatus('✅ Demande approuvée avec succès. Email envoyé.');
+        const emailError = data.emailStatus?.error || (data.emailStatus ? JSON.stringify(data.emailStatus) : null);
+        if (!data.emailStatus?.success && emailError) {
+          setStatus(`⚠️ Demande approuvée mais erreur email: ${emailError}`);
+        } else {
+          setStatus('✅ Demande approuvée avec succès. Email envoyé.');
+        }
+        setSelectedRequest(null);
+        setActiveTab('approved');
+        await loadRequests();
       }
-      setSelectedRequest(null);
-      setActiveTab('approved');
-      await loadRequests();
-      setTimeout(() => setStatus(''), 5000);
+      setTimeout(() => setStatus(''), 8000);
     } catch (err) {
-      setStatus(`❌ Erreur: ${err.message}`);
+      console.error('❌ Exception:', err);
+      setStatus(`❌ Erreur réseau: ${err.message}`);
     }
   };
 
@@ -79,22 +87,30 @@ function AdminRequests() {
         },
         body: JSON.stringify({ adminNote: rejectionReason })
       });
+      
+      console.log('📤 Response status:', res.status);
       const data = await res.json();
-      const emailError = data.emailStatus?.error || data.emailError || (data.emailStatus ? JSON.stringify(data.emailStatus) : null);
+      console.log('📥 Response data:', data);
+      
       if (!res.ok) {
-        setStatus(`❌ Erreur serveur: ${data.error || data.message || res.statusText}`);
-      } else if (!data.emailStatus?.success) {
-        setStatus(`⚠️ Demande rejetée mais erreur email: ${emailError || 'Inconnue'}`);
+        setStatus(`❌ Erreur serveur (${res.status}): ${data.message || data.error || 'Erreur inconnue'}`);
+        console.error('❌ Erreur rejet:', data);
       } else {
-        setStatus('✅ Demande rejetée. Email envoyé.');
+        const emailError = data.emailStatus?.error || (data.emailStatus ? JSON.stringify(data.emailStatus) : null);
+        if (!data.emailStatus?.success && emailError) {
+          setStatus(`⚠️ Demande rejetée mais erreur email: ${emailError}`);
+        } else {
+          setStatus('✅ Demande rejetée. Email envoyé.');
+        }
+        setRejectionReason('');
+        setSelectedRequest(null);
+        setActiveTab('rejected');
+        await loadRequests();
       }
-      setRejectionReason('');
-      setSelectedRequest(null);
-      setActiveTab('rejected');
-      await loadRequests();
-      setTimeout(() => setStatus(''), 5000);
+      setTimeout(() => setStatus(''), 8000);
     } catch (err) {
-      setStatus(`❌ Erreur: ${err.message}`);
+      console.error('❌ Exception:', err);
+      setStatus(`❌ Erreur réseau: ${err.message}`);
     }
   };
 

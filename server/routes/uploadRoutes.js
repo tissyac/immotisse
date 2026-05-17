@@ -72,7 +72,7 @@ router.post('/uploadPublic', (req, res) => {
     }
 
     try {
-      console.log('📝 req.file:', req.file ? `${req.file.filename} (${req.file.size} bytes)` : 'UNDEFINED');
+      console.log('📝 req.file complet:', JSON.stringify(req.file, null, 2));
       
       if (!req.file) {
         console.log('❌ Aucun fichier reçu');
@@ -82,20 +82,47 @@ router.post('/uploadPublic', (req, res) => {
         });
       }
 
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-      const host = req.headers['x-forwarded-host'] || req.get('host');
-      const baseUrl = `${protocol}://${host}`;
-      const fileUrl = isCloudinaryConfigured 
-        ? req.file.path  // Cloudinary retourne l'URL complète
-        : `${baseUrl}/uploads/${req.file.filename}`; // Local storage
+      // Déterminer l'URL du fichier
+      let fileUrl = '';
+      
+      if (isCloudinaryConfigured) {
+        // Avec Cloudinary, récupérer l'URL depuis la réponse
+        // multer-storage-cloudinary stocke l'URL dans req.file.path ou req.file.location
+        fileUrl = req.file.path || req.file.location || req.file.url;
+        
+        console.log('☁️  Cloudinary response:', {
+          path: req.file.path,
+          location: req.file.location,
+          url: req.file.url,
+          filename: req.file.filename,
+          final_url: fileUrl
+        });
+      } else {
+        // Local storage
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const host = req.headers['x-forwarded-host'] || req.get('host');
+        const baseUrl = `${protocol}://${host}`;
+        fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+        
+        console.log('📁 Local storage:', fileUrl);
+      }
+
+      if (!fileUrl) {
+        console.error('❌ ERREUR: Impossible de déterminer l\'URL du fichier');
+        return res.status(500).json({ 
+          success: false,
+          message: 'Impossible de traiter le fichier'
+        });
+      }
+
       console.log('✅ Upload réussi:', fileUrl);
       res.json({
         success: true,
         fileUrl,
-        filename: req.file.filename,
+        filename: req.file.filename || req.file.originalname,
         size: req.file.size,
         mimetype: req.file.mimetype,
-        public_id: req.file.filename // Pour suppression future si besoin
+        public_id: req.file.filename || req.file.public_id
       });
     } catch (error) {
       console.error('❌ Handler error:', error);

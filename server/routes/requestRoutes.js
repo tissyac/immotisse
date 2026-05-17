@@ -71,8 +71,14 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { adminNote } = req.body;
+    
+    console.log('📝 Approbation demande:', { id, adminNote });
+    
     const request = await Request.findById(id);
-    if (!request) return res.status(404).json({ message: "Demande non trouvée" });
+    if (!request) {
+      console.error('❌ Demande non trouvée:', id);
+      return res.status(404).json({ message: "Demande non trouvée" });
+    }
 
     const generatedPassword = Math.random().toString(36).slice(-10);
     const hashedPassword = await bcrypt.hash(generatedPassword, 10);
@@ -100,32 +106,49 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
     });
 
     await user.save();
+    console.log('✅ Utilisateur créé:', user._id);
+
     request.status = 'approved';
     request.adminNote = adminNote || 'Approuvée par l\'administration';
     await request.save();
+    console.log('✅ Demande approuvée');
 
-    // Audit log
-    await logAction('approve', 'request', request._id, req.user.userId, {
-      status: 'approved',
-      notes: request.adminNote
-    });
+    // Audit log (sans crash si erreur)
+    try {
+      await logAction('approve', 'request', request._id, req.user?.userId || 'admin', {
+        status: 'approved',
+        notes: request.adminNote
+      });
+      console.log('✅ Audit log enregistré');
+    } catch (auditError) {
+      console.warn('⚠️  Erreur audit log (non bloquant):', auditError.message);
+    }
 
-    // Envoyer un email
-    const emailResult = await sendApprovalEmail(request.companyEmail, request.companyEmail, generatedPassword, request.companyName);
-    if (!emailResult.success) {
-      console.error('Erreur email approbation :', emailResult.error);
+    // Envoyer un email (sans crash si erreur)
+    let emailStatus = { success: false, error: 'non envoyé' };
+    try {
+      emailStatus = await sendApprovalEmail(request.companyEmail, request.companyEmail, generatedPassword, request.companyName);
+      console.log('✅ Email approbation résultat:', emailStatus);
+    } catch (emailError) {
+      console.error('⚠️  Erreur email approbation:', emailError.message);
+      emailStatus = { success: false, error: emailError.message };
     }
 
     res.json({
-      message: "Demande approuvée et email envoyé",
+      success: true,
+      message: "Demande approuvée et utilisateur créé",
       username: request.companyEmail,
       password: generatedPassword,
-      emailStatus: emailResult
+      emailStatus: emailStatus
     });
 
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message || 'Erreur interne' });
+    console.error('❌ Erreur approbation:', error);
+    res.status(500).json({ 
+      success: false,
+      message: "Erreur serveur lors de l'approbation", 
+      error: error.message || 'Erreur interne' 
+    });
   }
 });
 
@@ -134,32 +157,54 @@ router.post('/:id/reject', adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { adminNote } = req.body;
+    
+    console.log('📝 Rejet demande:', { id, adminNote });
+    
     const request = await Request.findById(id);
-    if (!request) return res.status(404).json({ message: "Demande non trouvée" });
+    if (!request) {
+      console.error('❌ Demande non trouvée:', id);
+      return res.status(404).json({ message: "Demande non trouvée" });
+    }
 
     request.status = 'rejected';
     request.adminNote = adminNote || 'Rejetée par l\'administration';
     await request.save();
+    console.log('✅ Demande rejetée');
 
-    // Audit log
-    await logAction('reject', 'request', request._id, req.user.userId, {
-      status: 'rejected',
-      notes: request.adminNote
-    });
+    // Audit log (sans crash si erreur)
+    try {
+      await logAction('reject', 'request', request._id, req.user?.userId || 'admin', {
+        status: 'rejected',
+        notes: request.adminNote
+      });
+      console.log('✅ Audit log enregistré');
+    } catch (auditError) {
+      console.warn('⚠️  Erreur audit log (non bloquant):', auditError.message);
+    }
 
-    const emailResult = await sendRequestRejectionEmail(request.companyEmail, request.companyName, request.adminNote);
-    if (!emailResult.success) {
-      console.error('Erreur email rejet :', emailResult.error);
+    // Envoyer un email (sans crash si erreur)
+    let emailStatus = { success: false, error: 'non envoyé' };
+    try {
+      emailStatus = await sendRequestRejectionEmail(request.companyEmail, request.companyName, request.adminNote);
+      console.log('✅ Email rejet résultat:', emailStatus);
+    } catch (emailError) {
+      console.error('⚠️  Erreur email rejet:', emailError.message);
+      emailStatus = { success: false, error: emailError.message };
     }
     
     res.json({ 
+      success: true,
       message: "Demande refusée",
       request: request,
-      emailStatus: emailResult
+      emailStatus: emailStatus
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message || 'Erreur interne' });
+    console.error('❌ Erreur rejet:', error);
+    res.status(500).json({ 
+      success: false,
+      message: "Erreur serveur lors du rejet", 
+      error: error.message || 'Erreur interne' 
+    });
   }
 });
 
