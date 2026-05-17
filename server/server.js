@@ -27,6 +27,13 @@ app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '1gb' }));
 app.use(express.urlencoded({ limit: '1gb', extended: true }));
 
+// Vérifier les variables d'environnement au démarrage
+console.log('🔍 Vérification des variables d\'environnement:');
+console.log('  - SMTP_USER:', process.env.SMTP_USER ? '✅ présent' : '❌ manquant');
+console.log('  - SMTP_PASS:', process.env.SMTP_PASS ? '✅ présent' : '❌ manquant');
+console.log('  - SMTP_SERVICE:', process.env.SMTP_SERVICE || 'gmail (défaut)');
+console.log('  - MONGODB_URI:', process.env.MONGODB_URI ? '✅ présent' : '❌ manquant');
+
 // Initialiser le service email
 initEmailService();
 
