@@ -13,6 +13,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const cloudinaryRoutes = require('./routes/cloudinaryRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const { initEmailService } = require('./services/emailService');
 
 const app = express();
@@ -73,6 +74,7 @@ app.use('/contacts', contactRoutes);
 app.use('/requests', requestRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/cloudinary', cloudinaryRoutes);
+app.use('/admin', adminRoutes);
 app.use('/audit', auditRoutes);
 app.use('/messages', messageRoutes);
 

@@ -274,9 +274,34 @@ function escapeHtml(text) {
 module.exports = {
   initEmailService,
   sendApprovalEmail,
+  sendTestEmail,
   sendOfferApprovalEmail,
   sendOfferRejectionEmail,
   sendMessageNotificationEmail,
   sendContactNotificationEmail,
   sendRequestRejectionEmail
 };
+
+// Fonction utilitaire pour envoyer un email de test
+async function sendTestEmail(email) {
+  try {
+    if (!transporter) initEmailService();
+    if (!transporter) {
+      const errorMessage = 'SMTP non initialisé. Vérifiez SMTP_USER et SMTP_PASS dans .env.';
+      console.error('❌', errorMessage);
+      return { success: false, error: errorMessage };
+    }
+
+    const res = await transporter.sendMail({
+      from: process.env.SMTP_USER || 'noreply@immotiss.com',
+      to: email,
+      subject: 'Test email Immotiss',
+      text: 'Ceci est un email de test envoyé depuis le backend Immotiss pour vérifier la configuration SMTP.'
+    });
+    console.log('✅ Test email sent:', res.messageId);
+    return { success: true, messageId: res.messageId };
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'envoi du test email:', error);
+    return { success: false, error: error.message || error.toString() };
+  }
+}
