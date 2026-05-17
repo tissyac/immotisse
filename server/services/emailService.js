@@ -269,6 +269,44 @@ const sendRequestRejectionEmail = async (email, companyName, reason) => {
   }
 };
 
+const sendExistingUserEmail = async (email, username, companyName) => {
+  try {
+    if (!transporter) initEmailService();
+    if (!transporter) {
+      const errorMessage = 'SMTP non initialisé. Vérifiez SMTP_USER et SMTP_PASS dans .env.';
+      console.error('❌', errorMessage);
+      return { success: false, error: errorMessage };
+    }
+
+    const mailOptions = {
+      from: process.env.SMTP_USER || 'noreply@immotiss.com',
+      to: email,
+      subject: 'ℹ️ Compte existant - Immotiss',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px;">
+          <div style="background-color: #0f172a; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h2>Compte déjà existant</h2>
+          </div>
+          <div style="padding: 20px; background-color: #f5f7fb;">
+            <p>Bonjour,</p>
+            <p>Un compte avec l'email <strong>${escapeHtml(email)}</strong> existe déjà sur Immotiss.</p>
+            <p>Vous pouvez vous connecter avec votre identifiant : <strong>${escapeHtml(username)}</strong>.</p>
+            <p>Si vous avez oublié votre mot de passe, utilisez la fonctionnalité "Mot de passe oublié" pour le réinitialiser.</p>
+            <p style="color: #666; font-size: 12px;">Cordialement,<br>L'équipe Immotiss</p>
+          </div>
+        </div>
+      `
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log(`✅ [sendExistingUserEmail] Email sent to ${email}:`, result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error) {
+    console.error('❌ [sendExistingUserEmail] Erreur lors de l\'envoi du mail:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 function escapeHtml(text) {
   if (!text) return '';
   return text
@@ -287,7 +325,8 @@ module.exports = {
   sendOfferRejectionEmail,
   sendMessageNotificationEmail,
   sendContactNotificationEmail,
-  sendRequestRejectionEmail
+  sendRequestRejectionEmail,
+  sendExistingUserEmail
 };
 
 // Fonction utilitaire pour envoyer un email de test

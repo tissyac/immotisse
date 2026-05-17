@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const router = express.Router();
 const Request = require('../models/Request');
 const User = require('../models/User');
-const { sendApprovalEmail, sendRequestRejectionEmail } = require('../services/emailService');
+const { sendApprovalEmail, sendRequestRejectionEmail, sendExistingUserEmail } = require('../services/emailService');
 const { adminMiddleware } = require('../middleware/authMiddleware');
 const { logAction } = require('../services/auditService');
 
@@ -78,6 +78,43 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
     if (!request) {
       console.error('❌ Demande non trouvée:', id);
       return res.status(404).json({ message: "Demande non trouvée" });
+    }
+
+    // Vérifier si un utilisateur existe déjà avec cet email avant de créer
+    const existingUserCheck = await User.findOne({ $or: [{ companyEmail: request.companyEmail }, { username: request.companyEmail }] });
+    if (existingUserCheck) {
+      console.log('ℹ️ Utilisateur existe déjà, pas de création:', existingUserCheck._id);
+      request.status = 'approved';
+      request.adminNote = adminNote || 'Approuvée (utilisateur existant)';
+      await request.save();
+
+      // Audit log (sans crash si erreur)
+      try {
+        await logAction('approve', 'request', request._id, req.user?.userId || 'admin', {
+          status: 'approved',
+          notes: request.adminNote
+        });
+      } catch (auditError) {
+        console.warn('⚠️  Erreur audit log (non bloquant):', auditError.message);
+      }
+
+      // Notifier l'utilisateur existant
+      let emailStatus = { success: false, error: 'non envoyé' };
+      try {
+        console.log('📧 [approve] Appel sendExistingUserEmail pour:', existingUserCheck.companyEmail || existingUserCheck.username);
+        emailStatus = await sendExistingUserEmail(existingUserCheck.companyEmail || existingUserCheck.username, existingUserCheck.username || existingUserCheck.companyEmail, request.companyName);
+        console.log('📧 [approve] Résultat sendExistingUserEmail:', emailStatus);
+      } catch (emailError) {
+        console.error('⚠️  [approve] Erreur email existing user notification:', emailError.message, emailError);
+        emailStatus = { success: false, error: emailError.message };
+      }
+
+      return res.json({
+        success: true,
+        message: 'Demande approuvée — utilisateur existant',
+        username: existingUserCheck.username || existingUserCheck.companyEmail,
+        emailStatus
+      });
     }
 
     const generatedPassword = Math.random().toString(36).slice(-10);
