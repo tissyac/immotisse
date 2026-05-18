@@ -9,12 +9,29 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Charger le token depuis localStorage au démarrage
+  const STORAGE_KEY = 'token';
+
+  const getSavedToken = () => {
+    const sessionToken = sessionStorage.getItem(STORAGE_KEY);
+    if (sessionToken) return sessionToken;
+
+    const localToken = localStorage.getItem(STORAGE_KEY);
+    if (localToken) {
+      // Migration de l'ancien stockage local vers session pour éviter qu'une session reste ouverte entre deux visites.
+      sessionStorage.setItem(STORAGE_KEY, localToken);
+      localStorage.removeItem(STORAGE_KEY);
+      return localToken;
+    }
+
+    return null;
+  };
+
+  // Charger le token depuis sessionStorage au démarrage
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
+    const savedToken = getSavedToken();
     if (savedToken) {
       setToken(savedToken);
-      // Vérifier que le token est encore valid
+      // Vérifier que le token est encore valide
       verifyToken(savedToken);
     } else {
       setLoading(false);
@@ -31,12 +48,14 @@ export function AuthProvider({ children }) {
         const data = await res.json();
         setUser(data.user);
       } else {
-        localStorage.removeItem('token');
+        sessionStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEY);
         setToken(null);
       }
     } catch (err) {
       console.log('Erreur lors de la vérification:', err);
-      localStorage.removeItem('token');
+      sessionStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY);
       setToken(null);
     } finally {
       setLoading(false);
@@ -59,7 +78,7 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       setToken(data.token);
       setUser(data.user);
-      localStorage.setItem('token', data.token);
+      sessionStorage.setItem(STORAGE_KEY, data.token);
       return data;
     } catch (err) {
       throw err;
@@ -69,7 +88,8 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
+    sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   return (
