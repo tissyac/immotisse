@@ -12,10 +12,16 @@ const initEmailService = () => {
     transporter = nodemailer.createTransport({
       host: 'smtp.sendgrid.net',
       port: 587,
+      secure: false,
       auth: {
         user: 'apikey',
         pass: process.env.SENDGRID_API_KEY
-      }
+      },
+      connectionTimeout: 10000,
+      socketTimeout: 10000,
+      greetingTimeout: 10000,
+      logger: true,
+      debug: true
     });
   } else {
     // Configuration Gmail ou service SMTP générique
@@ -26,14 +32,19 @@ const initEmailService = () => {
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: process.env.SMTP_PORT || 587,
-      secure: process.env.SMTP_SECURE === 'true',
+      secure: process.env.SMTP_SECURE === 'true' ? true : false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
-      }
+      },
+      connectionTimeout: 10000,
+      socketTimeout: 10000,
+      greetingTimeout: 10000,
+      logger: true,
+      debug: process.env.NODE_ENV !== 'production'
     });
   }
-  console.log('✅ Service email initialisé');
+  console.log('✅ Service email initialisé avec timeouts configurés');
 };
 
 const sendApprovalEmail = async (email, username, password, companyName) => {

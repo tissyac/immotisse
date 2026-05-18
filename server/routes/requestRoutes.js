@@ -178,16 +178,13 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
 
       // Si utilisateur existant (non créé), notifier en conséquence
       if (!created) {
-        console.log('📧 [approve] Notifier utilisateur existant via sendExistingUserEmail');
-        let emailStatus = { success: false, error: 'non envoyé' };
-        try {
-          emailStatus = await sendExistingUserEmail(userDoc.companyEmail || userDoc.username, userDoc.username || userDoc.companyEmail, request.companyName);
-          console.log('📧 [approve] Résultat sendExistingUserEmail:', emailStatus);
-        } catch (notifyError) {
-          console.error('⚠️ [approve] Erreur notification utilisateur existant:', notifyError.message, notifyError);
-          emailStatus = { success: false, error: notifyError.message };
-        }
-        return res.json({ success: true, message: 'Demande approuvée — utilisateur existant', username: userDoc.username || userDoc.companyEmail, emailStatus });
+        console.log('📧 [approve] Notifier utilisateur existant via sendExistingUserEmail (en arrière-plan)');
+        // Envoyer l'email EN ARRIÈRE-PLAN (fire and forget, non bloquant)
+        sendExistingUserEmail(userDoc.companyEmail || userDoc.username, userDoc.username || userDoc.companyEmail, request.companyName)
+          .then(emailStatus => console.log('📧 [approve] Email utilisateur existant envoyé:', emailStatus))
+          .catch(emailError => console.error('⚠️  [approve] Erreur email utilisateur existant:', emailError.message));
+        
+        return res.json({ success: true, message: 'Demande approuvée — utilisateur existant', username: userDoc.username || userDoc.companyEmail });
       }
 
     } catch (saveError) {
@@ -206,23 +203,17 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
       console.warn('⚠️  Erreur audit log (non bloquant):', auditError.message);
     }
 
-    // Envoyer un email (sans crash si erreur)
-    let emailStatus = { success: false, error: 'non envoyé' };
-    try {
-      console.log('📧 [approve] Appel sendApprovalEmail pour:', request.companyEmail);
-      emailStatus = await sendApprovalEmail(request.companyEmail, request.companyEmail, generatedPassword, request.companyName);
-      console.log('📧 [approve] Résultat sendApprovalEmail:', emailStatus);
-    } catch (emailError) {
-      console.error('⚠️  [approve] Erreur email approbation:', emailError.message, emailError);
-      emailStatus = { success: false, error: emailError.message };
-    }
+    // Envoyer un email EN ARRIÈRE-PLAN (fire and forget, non bloquant)
+    console.log('📧 [approve] Envoi email approbation en arrière-plan à:', request.companyEmail);
+    sendApprovalEmail(request.companyEmail, request.companyEmail, generatedPassword, request.companyName)
+      .then(emailStatus => console.log('✅ [approve] Email d\'approbation envoyé:', emailStatus))
+      .catch(emailError => console.error('⚠️  [approve] Erreur email approbation:', emailError.message));
 
     res.json({
       success: true,
       message: "Demande approuvée et utilisateur créé",
       username: request.companyEmail,
-      password: generatedPassword,
-      emailStatus: emailStatus
+      password: generatedPassword
     });
 
   } catch (error) {
