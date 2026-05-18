@@ -1,29 +1,15 @@
 const nodemailer = require('nodemailer');
-
 let transporter;
+let sgMail = null;
+let useSendGrid = false;
 
 const initEmailService = () => {
   // Configuration flexible pour différents fournisseurs
-  if (process.env.SMTP_SERVICE === 'sendgrid' || process.env.SENDGRID_API_KEY) {
-    if (!process.env.SENDGRID_API_KEY) {
-      console.error('❌ SENDGRID_API_KEY non configuré');
-      return;
-    }
-    console.log('📧 Initialisation SendGrid SMTP...');
-    transporter = nodemailer.createTransport({
-      host: 'smtp.sendgrid.net',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'apikey',
-        pass: process.env.SENDGRID_API_KEY
-      },
-      connectionTimeout: 15000,
-      socketTimeout: 15000,
-      greetingTimeout: 15000,
-      logger: true,
-      debug: process.env.NODE_ENV !== 'production'
-    });
+  if (process.env.SENDGRID_API_KEY) {
+    console.log('📧 Initialisation SendGrid API...');
+    sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    useSendGrid = true;
   } else if (process.env.SMTP_USER && process.env.SMTP_PASS && !process.env.SMTP_USER.includes('votre.email') && !process.env.SMTP_PASS.includes('votre_mot')) {
     // Configuration Gmail ou service SMTP générique
     console.log('📧 Initialisation SMTP générique...');
@@ -50,6 +36,35 @@ const initEmailService = () => {
   console.log('✅ Service email initialisé avec timeouts configurés (15s)');
 };
 
+const getEmailFrom = () => {
+  return process.env.SENDGRID_FROM_EMAIL || process.env.SMTP_USER || 'noreply@immotiss.com';
+};
+
+const doSendMail = async (mailOptions) => {
+  if (useSendGrid && sgMail) {
+    const msg = {
+      to: mailOptions.to,
+      from: mailOptions.from || getEmailFrom(),
+      subject: mailOptions.subject,
+      html: mailOptions.html,
+      text: mailOptions.text
+    };
+    if (mailOptions.cc) msg.cc = mailOptions.cc;
+    if (mailOptions.bcc) msg.bcc = mailOptions.bcc;
+
+    const [response] = await sgMail.send(msg);
+    const messageId = response.headers ? response.headers['x-message-id'] || response.headers['X-Message-Id'] : undefined;
+    return { messageId: messageId || response.statusCode, response };
+  }
+
+  if (!transporter) initEmailService();
+  if (!transporter) {
+    throw new Error('SMTP non initialisé. Vérifiez SENDGRID_API_KEY ou SMTP_USER/SMTP_PASS.');
+  }
+
+  return transporter.sendMail(mailOptions);
+};
+
 const sendApprovalEmail = async (email, username, password, companyName) => {
   try {
     console.log('📧 [sendApprovalEmail] START - email:', email, 'transporter exists:', !!transporter);
@@ -68,7 +83,7 @@ const sendApprovalEmail = async (email, username, password, companyName) => {
     console.log('📧 [sendApprovalEmail] transporter ready, from:', process.env.SMTP_USER);
 
     const mailOptions = {
-      from: process.env.SMTP_USER || 'noreply@immotiss.com',
+      from: getEmailFrom(),
       to: email,
       subject: '✅ Validation de votre inscription - Immotiss',
       html: `
@@ -101,7 +116,7 @@ const sendApprovalEmail = async (email, username, password, companyName) => {
       `
     };
 
-    const result = await transporter.sendMail(mailOptions);
+    const result = await doSendMail(mailOptions);
     console.log(`✅ [sendApprovalEmail] Email sent successfully to ${email}:`, result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
@@ -119,8 +134,8 @@ const sendOfferApprovalEmail = async (email, companyName, offerTitle) => {
       return { success: false, error: errorMessage };
     }
 
-    await transporter.sendMail({
-      from: process.env.SMTP_USER || 'noreply@immotiss.com',
+    await doSendMail({
+      from: process.env.SMTP_USER || getEmailFrom(),
       to: email,
       subject: '✅ Votre offre a été approuvée - Immotiss',
       html: `
@@ -148,8 +163,8 @@ const sendOfferRejectionEmail = async (email, companyName, offerTitle, reason) =
   try {
     if (!transporter) initEmailService();
 
-    await transporter.sendMail({
-      from: process.env.SMTP_USER || 'noreply@immotiss.com',
+    await doSendMail({
+      from: process.env.SMTP_USER || getEmailFrom(),
       to: email,
       subject: '❌ Votre offre a été rejetée - Immotiss',
       html: `
@@ -182,8 +197,8 @@ const sendMessageNotificationEmail = async (email, senderName, senderEmail, subj
       return { success: false, error: errorMessage };
     }
 
-    await transporter.sendMail({
-      from: process.env.SMTP_USER || 'noreply@immotiss.com',
+    await doSendMail({
+      from: process.env.SMTP_USER || getEmailFrom(),
       to: email,
       subject: `Nouveau message de ${senderName} - Immotiss`,
       html: `
@@ -218,8 +233,8 @@ const sendContactNotificationEmail = async (email, name, replyEmail, message, ph
       return { success: false, error: errorMessage };
     }
 
-    await transporter.sendMail({
-      from: process.env.SMTP_USER || 'noreply@immotiss.com',
+    await doSendMail({
+      from: process.env.SMTP_USER || getEmailFrom(),
       to: email,
       subject: 'Nouveau message contact client - Immotiss',
       html: `
@@ -274,7 +289,7 @@ const sendRequestRejectionEmail = async (email, companyName, reason) => {
       `
     };
 
-    const result = await transporter.sendMail(mailOptions);
+    const result = await doSendMail(mailOptions);
     console.log(`✅ Rejection email sent to ${email}:`, result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
@@ -301,7 +316,7 @@ const sendExistingUserEmail = async (email, username, companyName) => {
     console.log('📧 [sendExistingUserEmail] transporter ready, from:', process.env.SMTP_USER);
 
     const mailOptions = {
-      from: process.env.SMTP_USER || 'noreply@immotiss.com',
+      from: getEmailFrom(),
       to: email,
       subject: 'ℹ️ Compte existant - Immotiss',
       html: `
@@ -321,7 +336,7 @@ const sendExistingUserEmail = async (email, username, companyName) => {
     };
 
     console.log('📧 [sendExistingUserEmail] Envoi du mail à', email);
-    const result = await transporter.sendMail(mailOptions);
+    const result = await doSendMail(mailOptions);
     console.log(`✅ [sendExistingUserEmail] Email sent successfully to ${email}:`, result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
@@ -362,8 +377,8 @@ async function sendTestEmail(email) {
       return { success: false, error: errorMessage };
     }
 
-    const res = await transporter.sendMail({
-      from: process.env.SMTP_USER || 'noreply@immotiss.com',
+    const res = await doSendMail({
+      from: getEmailFrom(),
       to: email,
       subject: 'Test email Immotiss',
       text: 'Ceci est un email de test envoyé depuis le backend Immotiss pour vérifier la configuration SMTP.'

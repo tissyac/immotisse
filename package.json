@@ -12,6 +12,7 @@
     "node": "18.x"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "cloudinary": "^1.41.3",
     "multer-storage-cloudinary": "^4.0.0"
   }
