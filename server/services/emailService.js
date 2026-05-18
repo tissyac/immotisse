@@ -69,18 +69,18 @@ const sendApprovalEmail = async (email, username, password, companyName) => {
   try {
     console.log('📧 [sendApprovalEmail] START - email:', email, 'transporter exists:', !!transporter);
     
-    if (!transporter) {
-      console.log('📧 [sendApprovalEmail] transporter undefined, initializing...');
+    if (!transporter && !useSendGrid) {
+      console.log('📧 [sendApprovalEmail] email service undefined, initializing...');
       initEmailService();
     }
     
-    if (!transporter) {
-      const errorMessage = 'SMTP non initialisé. Vérifiez SMTP_USER et SMTP_PASS dans .env.';
+    if (!transporter && !useSendGrid) {
+      const errorMessage = 'Service email non initialisé. Vérifiez SENDGRID_API_KEY ou SMTP_USER/SMTP_PASS.';
       console.error('❌ [sendApprovalEmail]', errorMessage);
       return { success: false, error: errorMessage };
     }
 
-    console.log('📧 [sendApprovalEmail] transporter ready, from:', process.env.SMTP_USER);
+    console.log('📧 [sendApprovalEmail] email service ready', { useSendGrid, transporter: !!transporter });
 
     const mailOptions = {
       from: getEmailFrom(),
@@ -127,9 +127,9 @@ const sendApprovalEmail = async (email, username, password, companyName) => {
 
 const sendOfferApprovalEmail = async (email, companyName, offerTitle) => {
   try {
-    if (!transporter) initEmailService();
-    if (!transporter) {
-      const errorMessage = 'SMTP non initialisé. Vérifiez SMTP_USER et SMTP_PASS dans .env.';
+    if (!transporter && !useSendGrid) initEmailService();
+    if (!transporter && !useSendGrid) {
+      const errorMessage = 'Service email non initialisé. Vérifiez SENDGRID_API_KEY ou SMTP_USER/SMTP_PASS.';
       console.error('❌', errorMessage);
       return { success: false, error: errorMessage };
     }
@@ -190,9 +190,9 @@ const sendOfferRejectionEmail = async (email, companyName, offerTitle, reason) =
 
 const sendMessageNotificationEmail = async (email, senderName, senderEmail, subject, preview) => {
   try {
-    if (!transporter) initEmailService();
-    if (!transporter) {
-      const errorMessage = 'SMTP non initialisé. Vérifiez SMTP_USER et SMTP_PASS dans .env.';
+    if (!transporter && !useSendGrid) initEmailService();
+    if (!transporter && !useSendGrid) {
+      const errorMessage = 'Service email non initialisé. Vérifiez SENDGRID_API_KEY ou SMTP_USER/SMTP_PASS.';
       console.error('❌', errorMessage);
       return { success: false, error: errorMessage };
     }
@@ -226,9 +226,9 @@ const sendMessageNotificationEmail = async (email, senderName, senderEmail, subj
 
 const sendContactNotificationEmail = async (email, name, replyEmail, message, phone, offerTitle) => {
   try {
-    if (!transporter) initEmailService();
-    if (!transporter) {
-      const errorMessage = 'SMTP non initialisé. Vérifiez SMTP_USER et SMTP_PASS dans .env.';
+    if (!transporter && !useSendGrid) initEmailService();
+    if (!transporter && !useSendGrid) {
+      const errorMessage = 'Service email non initialisé. Vérifiez SENDGRID_API_KEY ou SMTP_USER/SMTP_PASS.';
       console.error('❌', errorMessage);
       return { success: false, error: errorMessage };
     }
@@ -263,15 +263,15 @@ const sendContactNotificationEmail = async (email, name, replyEmail, message, ph
 
 const sendRequestRejectionEmail = async (email, companyName, reason) => {
   try {
-    if (!transporter) initEmailService();
-    if (!transporter) {
-      const errorMessage = 'SMTP non initialisé. Vérifiez SMTP_USER et SMTP_PASS dans .env.';
+    if (!transporter && !useSendGrid) initEmailService();
+    if (!transporter && !useSendGrid) {
+      const errorMessage = 'Service email non initialisé. Vérifiez SENDGRID_API_KEY ou SMTP_USER/SMTP_PASS.';
       console.error('❌', errorMessage);
       return { success: false, error: errorMessage };
     }
 
     const mailOptions = {
-      from: process.env.SMTP_USER || 'noreply@immotiss.com',
+      from: getEmailFrom(),
       to: email,
       subject: '❌ Votre inscription a été rejetée - Immotiss',
       html: `
@@ -300,20 +300,20 @@ const sendRequestRejectionEmail = async (email, companyName, reason) => {
 
 const sendExistingUserEmail = async (email, username, companyName) => {
   try {
-    console.log('📧 [sendExistingUserEmail] START - email:', email, 'transporter exists:', !!transporter);
+    console.log('📧 [sendExistingUserEmail] START - email:', email, 'transporter exists:', !!transporter, 'useSendGrid:', useSendGrid);
     
-    if (!transporter) {
-      console.log('📧 [sendExistingUserEmail] transporter undefined, initializing...');
+    if (!transporter && !useSendGrid) {
+      console.log('📧 [sendExistingUserEmail] email service undefined, initializing...');
       initEmailService();
     }
     
-    if (!transporter) {
-      const errorMessage = 'SMTP non initialisé. Vérifiez SMTP_USER et SMTP_PASS dans .env.';
+    if (!transporter && !useSendGrid) {
+      const errorMessage = 'Service email non initialisé. Vérifiez SENDGRID_API_KEY ou SMTP_USER/SMTP_PASS.';
       console.error('❌ [sendExistingUserEmail]', errorMessage);
       return { success: false, error: errorMessage };
     }
 
-    console.log('📧 [sendExistingUserEmail] transporter ready, from:', process.env.SMTP_USER);
+    console.log('📧 [sendExistingUserEmail] email service ready', { useSendGrid, transporter: !!transporter });
 
     const mailOptions = {
       from: getEmailFrom(),
@@ -370,9 +370,9 @@ module.exports = {
 // Fonction utilitaire pour envoyer un email de test
 async function sendTestEmail(email) {
   try {
-    if (!transporter) initEmailService();
-    if (!transporter) {
-      const errorMessage = 'SMTP non initialisé. Vérifiez SMTP_USER et SMTP_PASS dans .env.';
+    if (!transporter && !useSendGrid) initEmailService();
+    if (!transporter && !useSendGrid) {
+      const errorMessage = 'Service email non initialisé. Vérifiez SENDGRID_API_KEY ou SMTP_USER/SMTP_PASS.';
       console.error('❌', errorMessage);
       return { success: false, error: errorMessage };
     }
