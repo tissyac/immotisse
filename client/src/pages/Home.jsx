@@ -293,6 +293,13 @@ function Home() {
                 <div>Cité 200 logements, Iheddaden, Béjaia</div>
               </div>
             </div>
+            <div className="contact-item">
+              <span className="contact-icon">✉️</span>
+              <div>
+                <div className="contact-item-label">Email</div>
+                <div><a href="mailto:immotisseimo06@gmail.com">immotisseimo06@gmail.com</a></div>
+              </div>
+            </div>
           </div>
 
           {/* Social Links */}
