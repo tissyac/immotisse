@@ -6,11 +6,28 @@ const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
 
 // Helper function to format document URLs
 const formatDocumentUrl = (url) => {
-  if (!url) return '';
-  // If URL is already absolute (starts with http), return as-is
-  if (url.startsWith('http')) return url;
-  // Otherwise prepend API_URL
-  return `${API_URL}${url}`;
+  if (!url) {
+    console.warn('⚠️ Document URL is empty');
+    return '';
+  }
+  
+  // If URL is already absolute (starts with http or https), return as-is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    console.log('✅ Document URL is absolute:', url.substring(0, 50) + '...');
+    return url;
+  }
+  
+  // If it looks like a Cloudinary URL (contains res.cloudinary.com), it might be missing protocol
+  if (url.includes('cloudinary') || url.includes('res.')) {
+    const fixedUrl = url.startsWith('//') ? `https:${url}` : `https://${url}`;
+    console.log('🔧 Fixed Cloudinary URL:', fixedUrl.substring(0, 50) + '...');
+    return fixedUrl;
+  }
+  
+  // Otherwise it's a relative path, prepend API_URL
+  const finalUrl = `${API_URL}${url}`;
+  console.log('📁 Local document URL:', finalUrl);
+  return finalUrl;
 };
 
 function AdminDashboard() {

@@ -36,9 +36,28 @@ router.post('/upload', authMiddleware, (req, res) => {
       const protocol = req.headers['x-forwarded-proto'] || req.protocol;
       const host = req.headers['x-forwarded-host'] || req.get('host');
       const baseUrl = `${protocol}://${host}`;
-      const fileUrl = isCloudinaryConfigured 
-        ? req.file.path  // Cloudinary retourne l'URL complète
-        : `${baseUrl}/uploads/${req.file.filename}`; // Local storage
+      let fileUrl = '';
+      
+      if (isCloudinaryConfigured) {
+        // Get Cloudinary URL from multiple possible fields
+        fileUrl = req.file.path || req.file.location || req.file.secure_url || req.file.url;
+        
+        // Ensure protocol is included
+        if (fileUrl && !fileUrl.startsWith('http')) {
+          fileUrl = `https://${fileUrl}`;
+        }
+        
+        console.log('☁️  Cloudinary upload:', {
+          path: req.file.path,
+          location: req.file.location,
+          secure_url: req.file.secure_url,
+          final_url: fileUrl
+        });
+      } else {
+        fileUrl = `${baseUrl}/uploads/${req.file.filename}`; // Local storage
+        console.log('📁 Local storage upload:', fileUrl);
+      }
+      
       console.log('✅ Upload réussi:', fileUrl);
       res.json({
         success: true,
@@ -94,9 +113,17 @@ router.post('/uploadPublic', (req, res) => {
           path: req.file.path,
           location: req.file.location,
           url: req.file.url,
+          secure_url: req.file.secure_url,
           filename: req.file.filename,
-          final_url: fileUrl
+          final_url: fileUrl,
+          full_file_object: Object.keys(req.file)
         });
+        
+        // Cloudinary sometimes returns without protocol, ensure it's https
+        if (fileUrl && !fileUrl.startsWith('http')) {
+          fileUrl = `https://${fileUrl}`;
+          console.log('🔧 Fixed Cloudinary URL with https protocol');
+        }
       } else {
         // Local storage
         const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -156,15 +183,26 @@ router.post('/uploadMultiple', authMiddleware, (req, res) => {
       const protocol = req.headers['x-forwarded-proto'] || req.protocol;
       const host = req.headers['x-forwarded-host'] || req.get('host');
       const baseUrl = `${protocol}://${host}`;
-      const files = req.files.map(file => ({
-        fileUrl: isCloudinaryConfigured 
-          ? file.path  // Cloudinary retourne l'URL complète
-          : `${baseUrl}/uploads/${file.filename}`, // Local storage
-        filename: file.filename,
-        size: file.size,
-        mimetype: file.mimetype,
-        public_id: file.filename // Pour suppression future si besoin
-      }));
+      const files = req.files.map(file => {
+        let fileUrl = '';
+        if (isCloudinaryConfigured) {
+          fileUrl = file.path || file.location || file.secure_url || file.url;
+          // Ensure protocol is included
+          if (fileUrl && !fileUrl.startsWith('http')) {
+            fileUrl = `https://${fileUrl}`;
+          }
+        } else {
+          fileUrl = `${baseUrl}/uploads/${file.filename}`; // Local storage
+        }
+        
+        return {
+          fileUrl,
+          filename: file.filename,
+          size: file.size,
+          mimetype: file.mimetype,
+          public_id: file.filename // Pour suppression future si besoin
+        };
+      });
 
       console.log(`✅ ${files.length} fichiers uploadés`);
       res.json({
