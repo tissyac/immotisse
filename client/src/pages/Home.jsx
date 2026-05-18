@@ -7,6 +7,13 @@ const categories = [
   { label: 'Promotion', value: 'promotion', icon: '🏗️', color: '#f48500', description: 'Promotions immobilières' }
 ];
 
+const formatOfferImageUrl = (src) => {
+  if (!src) return '';
+  if (src.startsWith('http://') || src.startsWith('https://')) return src;
+  if (src.startsWith('//')) return `https:${src}`;
+  return `https://immotisse.onrender.com${src.startsWith('/') ? src : `/${src}`}`;
+};
+
 function Home() {
   const [counts, setCounts] = useState({ promotion: 0, vente: 0, location: 0 });
   const [recentOffers, setRecentOffers] = useState([]);
@@ -170,7 +177,7 @@ function Home() {
               <div key={offer._id} className="recent-offer-card">
                 <div className="offer-image">
                   {offer.images && offer.images.length > 0 ? (
-                    <img src={`https://immotisse.onrender.com${offer.images[0]}`} alt={offer.title} />
+                    <img src={formatOfferImageUrl(offer.images[0])} alt={offer.title} />
                   ) : (
                     <div className="no-image">📸</div>
                   )}

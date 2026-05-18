@@ -27,6 +27,13 @@ const subcategoryLabels = {
   longue_duree: 'Longue durée'
 };
 
+const formatOfferImageUrl = (src) => {
+  if (!src) return '';
+  if (src.startsWith('http://') || src.startsWith('https://')) return src;
+  if (src.startsWith('//')) return `https:${src}`;
+  return `https://immotisse.onrender.com${src.startsWith('/') ? src : `/${src}`}`;
+};
+
 function CategoryPage() {
   const { category, subcategory } = useParams();
   const [offers, setOffers] = useState([]);
@@ -198,7 +205,7 @@ function CategoryPage() {
                     <Link key={offer._id} to={`/offer/${offer._id}`} className="offer-card">
                       <div className="offer-image">
                         {offer.images && offer.images.length > 0 ? (
-                          <img src={`https://immotisse.onrender.com${offer.images[0]}`} alt={offer.title} />
+                          <img src={formatOfferImageUrl(offer.images[0])} alt={offer.title} />
                         ) : (
                           <div className="no-image">📷</div>
                         )}
@@ -272,7 +279,7 @@ function CategoryPage() {
                     <div className="offer-image-container">
                       {offer.images && offer.images.length > 0 ? (
                         <img
-                          src={`https://immotisse.onrender.com${offer.images[0]}`}
+                          src={formatOfferImageUrl(offer.images[0])}
                           alt={offer.title}
                           className="offer-image"
                         />
