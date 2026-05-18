@@ -290,7 +290,7 @@ function Home() {
               <span className="contact-icon">📍</span>
               <div>
                 <div className="contact-item-label">Adresse</div>
-                <div>Cité 200 logements, Iheddaden, Béjaia</div>
+                <div>Cité Djama en face du stade, Bejaia 06000</div>
               </div>
             </div>
             <div className="contact-item">
