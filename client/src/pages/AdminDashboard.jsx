@@ -4,6 +4,15 @@ import '../styles/admin-dashboard-clean.css';
 
 const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
 
+// Helper function to format document URLs
+const formatDocumentUrl = (url) => {
+  if (!url) return '';
+  // If URL is already absolute (starts with http), return as-is
+  if (url.startsWith('http')) return url;
+  // Otherwise prepend API_URL
+  return `${API_URL}${url}`;
+};
+
 function AdminDashboard() {
   const { user, token } = useContext(AuthContext);
   const [tab, setTab] = useState('requests'); // requests, offers, contacts, audit, stats
@@ -591,9 +600,57 @@ function AdminDashboard() {
                   </div>
 
                   <div className="request-detail-section">
-                    <h5>Documents</h5>
-                    <div className="detail-row"><span className="detail-label">CIN / NIN document</span><span className="detail-value">{selectedRequest.ninDocument ? <a href={`${API_URL}${selectedRequest.ninDocument}`} target="_blank" rel="noreferrer">Voir le document</a> : 'Aucun document'}</span></div>
-                    <div className="detail-row"><span className="detail-label">Registre de commerce</span><span className="detail-value">{selectedRequest.rcDocument ? <a href={`${API_URL}${selectedRequest.rcDocument}`} target="_blank" rel="noreferrer">Voir le document</a> : 'Aucun document'}</span></div>
+                    <h5>📄 Documents</h5>
+                    
+                    {/* NIN Document */}
+                    {selectedRequest.ninDocument ? (
+                      <div className="request-detail-subsection">
+                        <p className="detail-label">CIN / NIN document</p>
+                        {selectedRequest.ninDocument.match(/\.(pdf|jpg|jpeg|png|gif|webp)$/i) ? (
+                          selectedRequest.ninDocument.match(/\.pdf$/i) ? (
+                            <a href={formatDocumentUrl(selectedRequest.ninDocument)} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                              📥 Télécharger le PDF
+                            </a>
+                          ) : (
+                            <img src={formatDocumentUrl(selectedRequest.ninDocument)} alt="CIN/NIN" style={{ maxWidth: '300px', maxHeight: '300px', borderRadius: '4px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=Document+indisponible'; }} />
+                          )
+                        ) : (
+                          <a href={formatDocumentUrl(selectedRequest.ninDocument)} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                            📎 Voir le document
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="request-detail-subsection">
+                        <p className="detail-label">CIN / NIN document</p>
+                        <span className="detail-value" style={{ color: '#999' }}>Aucun document</span>
+                      </div>
+                    )}
+
+                    {/* RC Document */}
+                    {selectedRequest.rcDocument ? (
+                      <div className="request-detail-subsection">
+                        <p className="detail-label">Registre de commerce (RC)</p>
+                        {selectedRequest.rcDocument.match(/\.(pdf|jpg|jpeg|png|gif|webp)$/i) ? (
+                          selectedRequest.rcDocument.match(/\.pdf$/i) ? (
+                            <a href={formatDocumentUrl(selectedRequest.rcDocument)} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                              📥 Télécharger le PDF
+                            </a>
+                          ) : (
+                            <img src={formatDocumentUrl(selectedRequest.rcDocument)} alt="Registre de Commerce" style={{ maxWidth: '300px', maxHeight: '300px', borderRadius: '4px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=Document+indisponible'; }} />
+                          )
+                        ) : (
+                          <a href={formatDocumentUrl(selectedRequest.rcDocument)} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                            📎 Voir le document
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="request-detail-subsection">
+                        <p className="detail-label">Registre de commerce (RC)</p>
+                        <span className="detail-value" style={{ color: '#999' }}>Aucun document</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="request-detail-section">
@@ -1013,13 +1070,13 @@ function AdminDashboard() {
                       {selectedUser.ninDocument.match(/\.(pdf|jpg|jpeg|png|gif|webp)$/i) ? (
                         selectedUser.ninDocument.match(/\.pdf$/i) ? (
                           <div className="document-preview-item">
-                            <a href={`${API_URL}${selectedUser.ninDocument}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                            <a href={formatDocumentUrl(selectedUser.ninDocument)} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
                               📥 Télécharger le PDF
                             </a>
                           </div>
                         ) : (
                           <div className="document-preview-item">
-                            <img src={`${API_URL}${selectedUser.ninDocument}`} alt="Carte d'Identité" style={{ maxWidth: '300px', maxHeight: '300px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=Document+indisponible'; }} />
+                            <img src={formatDocumentUrl(selectedUser.ninDocument)} alt="Carte d'Identité" style={{ maxWidth: '300px', maxHeight: '300px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=Document+indisponible'; }} />
                           </div>
                         )
                       ) : null}
@@ -1047,13 +1104,13 @@ function AdminDashboard() {
                       {selectedUser.rcDocument.match(/\.(pdf|jpg|jpeg|png|gif|webp)$/i) ? (
                         selectedUser.rcDocument.match(/\.pdf$/i) ? (
                           <div className="document-preview-item">
-                            <a href={`${API_URL}${selectedUser.rcDocument}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                            <a href={formatDocumentUrl(selectedUser.rcDocument)} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
                               📥 Télécharger le PDF
                             </a>
                           </div>
                         ) : (
                           <div className="document-preview-item">
-                            <img src={`${API_URL}${selectedUser.rcDocument}`} alt="Registre de Commerce" style={{ maxWidth: '300px', maxHeight: '300px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=Document+indisponible'; }} />
+                            <img src={formatDocumentUrl(selectedUser.rcDocument)} alt="Registre de Commerce" style={{ maxWidth: '300px', maxHeight: '300px' }} onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=Document+indisponible'; }} />
                           </div>
                         )
                       ) : null}
