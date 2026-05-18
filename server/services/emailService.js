@@ -4,11 +4,12 @@ let transporter;
 
 const initEmailService = () => {
   // Configuration flexible pour différents fournisseurs
-  if (process.env.SMTP_SERVICE === 'sendgrid') {
+  if (process.env.SMTP_SERVICE === 'sendgrid' || process.env.SENDGRID_API_KEY) {
     if (!process.env.SENDGRID_API_KEY) {
       console.error('❌ SENDGRID_API_KEY non configuré');
       return;
     }
+    console.log('📧 Initialisation SendGrid SMTP...');
     transporter = nodemailer.createTransport({
       host: 'smtp.sendgrid.net',
       port: 587,
@@ -17,18 +18,15 @@ const initEmailService = () => {
         user: 'apikey',
         pass: process.env.SENDGRID_API_KEY
       },
-      connectionTimeout: 10000,
-      socketTimeout: 10000,
-      greetingTimeout: 10000,
+      connectionTimeout: 15000,
+      socketTimeout: 15000,
+      greetingTimeout: 15000,
       logger: true,
-      debug: true
+      debug: process.env.NODE_ENV !== 'production'
     });
-  } else {
+  } else if (process.env.SMTP_USER && process.env.SMTP_PASS && !process.env.SMTP_USER.includes('votre.email') && !process.env.SMTP_PASS.includes('votre_mot')) {
     // Configuration Gmail ou service SMTP générique
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS || process.env.SMTP_USER.includes('votre.email') || process.env.SMTP_PASS.includes('votre_mot')) {
-      console.error('❌ SMTP_USER ou SMTP_PASS non configurés ou contiennent des valeurs par défaut');
-      return;
-    }
+    console.log('📧 Initialisation SMTP générique...');
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: process.env.SMTP_PORT || 587,
@@ -37,14 +35,19 @@ const initEmailService = () => {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
       },
-      connectionTimeout: 10000,
-      socketTimeout: 10000,
-      greetingTimeout: 10000,
+      connectionTimeout: 15000,
+      socketTimeout: 15000,
+      greetingTimeout: 15000,
+      maxConnections: 1,
+      maxMessages: 5,
       logger: true,
       debug: process.env.NODE_ENV !== 'production'
     });
+  } else {
+    console.error('❌ Aucun service email configuré. Configurez SENDGRID_API_KEY ou SMTP_USER/SMTP_PASS');
+    return;
   }
-  console.log('✅ Service email initialisé avec timeouts configurés');
+  console.log('✅ Service email initialisé avec timeouts configurés (15s)');
 };
 
 const sendApprovalEmail = async (email, username, password, companyName) => {
