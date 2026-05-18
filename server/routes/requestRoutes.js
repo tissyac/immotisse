@@ -179,12 +179,15 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
       // Si utilisateur existant (non créé), notifier en conséquence
       if (!created) {
         console.log('📧 [approve] Notifier utilisateur existant via sendExistingUserEmail');
+        let emailStatus = { success: false, error: 'non envoyé' };
         try {
-          await sendExistingUserEmail(userDoc.companyEmail || userDoc.username, userDoc.username || userDoc.companyEmail, request.companyName);
+          emailStatus = await sendExistingUserEmail(userDoc.companyEmail || userDoc.username, userDoc.username || userDoc.companyEmail, request.companyName);
+          console.log('📧 [approve] Résultat sendExistingUserEmail:', emailStatus);
         } catch (notifyError) {
-          console.warn('⚠️ Erreur notification utilisateur existant:', notifyError.message);
+          console.error('⚠️ [approve] Erreur notification utilisateur existant:', notifyError.message, notifyError);
+          emailStatus = { success: false, error: notifyError.message };
         }
-        return res.json({ success: true, message: 'Demande approuvée — utilisateur existant', username: userDoc.username || userDoc.companyEmail });
+        return res.json({ success: true, message: 'Demande approuvée — utilisateur existant', username: userDoc.username || userDoc.companyEmail, emailStatus });
       }
 
     } catch (saveError) {

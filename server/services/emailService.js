@@ -271,12 +271,20 @@ const sendRequestRejectionEmail = async (email, companyName, reason) => {
 
 const sendExistingUserEmail = async (email, username, companyName) => {
   try {
-    if (!transporter) initEmailService();
+    console.log('📧 [sendExistingUserEmail] START - email:', email, 'transporter exists:', !!transporter);
+    
+    if (!transporter) {
+      console.log('📧 [sendExistingUserEmail] transporter undefined, initializing...');
+      initEmailService();
+    }
+    
     if (!transporter) {
       const errorMessage = 'SMTP non initialisé. Vérifiez SMTP_USER et SMTP_PASS dans .env.';
-      console.error('❌', errorMessage);
+      console.error('❌ [sendExistingUserEmail]', errorMessage);
       return { success: false, error: errorMessage };
     }
+
+    console.log('📧 [sendExistingUserEmail] transporter ready, from:', process.env.SMTP_USER);
 
     const mailOptions = {
       from: process.env.SMTP_USER || 'noreply@immotiss.com',
@@ -298,12 +306,13 @@ const sendExistingUserEmail = async (email, username, companyName) => {
       `
     };
 
+    console.log('📧 [sendExistingUserEmail] Envoi du mail à', email);
     const result = await transporter.sendMail(mailOptions);
-    console.log(`✅ [sendExistingUserEmail] Email sent to ${email}:`, result.messageId);
+    console.log(`✅ [sendExistingUserEmail] Email sent successfully to ${email}:`, result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
-    console.error('❌ [sendExistingUserEmail] Erreur lors de l\'envoi du mail:', error);
-    return { success: false, error: error.message };
+    console.error('❌ [sendExistingUserEmail] Erreur lors de l\'envoi du mail:', error.message, error);
+    return { success: false, error: error.message || error.toString() };
   }
 };
 
