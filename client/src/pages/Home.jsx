@@ -35,7 +35,7 @@ function Home() {
       setError('');
 
       // Charger les comptes par catégorie
-      const response = await fetch('https://immotisse.onrender.com/offers?status=approved&limit=50');
+      const response = await fetch('https://immotisse.onrender.com/offers?status=approved&limit=50', { cache: 'force-cache' });
       const data = await response.json();
       if (!data.offers) {
         setError('Impossible de charger les données.');
@@ -173,43 +173,47 @@ function Home() {
         <div className="section-container">
           <h2>Offres récentes</h2>
           <div className="recent-offers-grid">
-            {recentOffers.map((offer) => (
-              <div key={offer._id} className="recent-offer-card">
-                <div className="offer-image">
-                  {offer.images && offer.images.length > 0 ? (
-                    <img src={formatOfferImageUrl(offer.images[0])} alt={offer.title} />
-                  ) : (
-                    <div className="no-image">📸</div>
-                  )}
-                </div>
-                <div className="offer-details">
-                  <div className="offer-price">💰 {offer.price ? `${offer.price.toLocaleString()} DA` : 'Prix sur demande'}</div>
-                  
-                  {/* Affichage simplifié pour les maisons, locaux commerciaux et location longue durée */}
-                  {(offer.mainCategory === 'vente' && (offer.subCategory === 'maison' || offer.subCategory === 'locaux_commerciaux')) ||
-                   (offer.mainCategory === 'location' && offer.subCategory === 'longue_duree') ? (
-                    <>
-                      <div className="offer-address">📍 {offer.address || offer.city || 'Adresse non spécifiée'}</div>
-                      <div className="offer-description">📝 {offer.description ? offer.description.slice(0, 50) + '...' : 'Description non disponible'}</div>
-                      {offer.subCategory === 'maison' ? (
+            {loading ? (
+              <div className="loading">Chargement des offres...</div>
+            ) : (
+              recentOffers.map((offer) => (
+                <div key={offer._id} className="recent-offer-card">
+                  <div className="offer-image">
+                    {offer.images && offer.images.length > 0 ? (
+                      <img src={formatOfferImageUrl(offer.images[0])} alt={offer.title} loading="lazy" />
+                    ) : (
+                      <div className="no-image">📸</div>
+                    )}
+                  </div>
+                  <div className="offer-details">
+                    <div className="offer-price">💰 {offer.price ? `${offer.price.toLocaleString()} DA` : 'Prix sur demande'}</div>
+                    
+                    {/* Affichage simplifié pour les maisons, locaux commerciaux et location longue durée */}
+                    {(offer.mainCategory === 'vente' && (offer.subCategory === 'maison' || offer.subCategory === 'locaux_commerciaux')) ||
+                     (offer.mainCategory === 'location' && offer.subCategory === 'longue_duree') ? (
+                      <>
+                        <div className="offer-address">📍 {offer.address || offer.city || 'Adresse non spécifiée'}</div>
+                        <div className="offer-description">📝 {offer.description ? offer.description.slice(0, 50) + '...' : 'Description non disponible'}</div>
+                        {offer.subCategory === 'maison' ? (
+                          <div className="offer-type">🏠 {offer.propertyType || 'Type non spécifié'}</div>
+                        ) : offer.subCategory === 'locaux_commerciaux' ? (
+                          <div className="offer-type">🏪 {offer.area ? `${offer.area} m²` : 'Superficie non spécifiée'}</div>
+                        ) : offer.mainCategory === 'location' && offer.subCategory === 'longue_duree' ? (
+                          <div className="offer-type">🏠 {offer.propertyType || 'Type non spécifié'}</div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <>
+                        <div className="offer-address">📍 {offer.address || offer.city || 'Adresse non spécifiée'}</div>
                         <div className="offer-type">🏠 {offer.propertyType || 'Type non spécifié'}</div>
-                      ) : offer.subCategory === 'locaux_commerciaux' ? (
-                        <div className="offer-type">🏪 {offer.area ? `${offer.area} m²` : 'Superficie non spécifiée'}</div>
-                      ) : offer.mainCategory === 'location' && offer.subCategory === 'longue_duree' ? (
-                        <div className="offer-type">🏠 {offer.propertyType || 'Type non spécifié'}</div>
-                      ) : null}
-                    </>
-                  ) : (
-                    <>
-                      <div className="offer-address">📍 {offer.address || offer.city || 'Adresse non spécifiée'}</div>
-                      <div className="offer-type">🏠 {offer.propertyType || 'Type non spécifié'}</div>
-                    </>
-                  )}
-                  
-                  <Link to={`/offer/${offer._id}`} className="view-more-btn">Voir plus</Link>
+                      </>
+                    )}
+                    
+                    <Link to={`/offer/${offer._id}`} className="view-more-btn">Voir plus</Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
