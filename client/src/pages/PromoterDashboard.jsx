@@ -824,14 +824,14 @@ function PromoterDashboard() {
                         <h4>💰 Modalités financières</h4>
                         <div className="form-group required">
                           <label>Modalités de paiement *</label>
-                          <input
-                            type="text"
+                          <textarea
+                            rows="3"
                             value={form.paymentTerms}
                             onChange={changeField('paymentTerms')}
-                            placeholder="Ex: 30% acompte, mensualités sur 24 mois"
+                            placeholder="Ex: 30% acompte, mensualités sur 24 mois, versement en plusieurs fois"
                             required
                           />
-                          <small>Précisez les conditions de paiement (acomptes, échéanciers, etc.).</small>
+                          <small>Précisez les conditions de paiement. Vous pouvez écrire plusieurs lignes.</small>
                         </div>
                       </div>
 
@@ -841,14 +841,13 @@ function PromoterDashboard() {
                           <div className="form-group required">
                             <label>Nombre d'appartements *</label>
                             <input
-                              type="number"
+                              type="text"
                               value={form.apartmentTypes}
                               onChange={changeField('apartmentTypes')}
-                              placeholder="Ex: 50"
-                              min="1"
+                              placeholder="Ex: 50 appartements T3/T4, 20 studios"
                               required
                             />
-                            <small>Nombre total d'appartements dans la promotion.</small>
+                            <small>Indiquez le nombre et/ou la composition : par ex. 50 appartements T3, 20 studios.</small>
                           </div>
                           <div className="form-group required">
                             <label>Statut du projet *</label>
