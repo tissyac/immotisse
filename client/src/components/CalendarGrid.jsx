@@ -120,9 +120,9 @@ function CalendarGrid({ reservedPeriods = [], disabled = false, readOnly = false
   return (
     <div className="calendar-grid-container">
       <div className="calendar-header">
-        <button onClick={prevMonth} disabled={disabled}>‹</button>
+        <button type="button" onClick={prevMonth} disabled={disabled}>‹</button>
         <h3>{monthNames[currentMonth]} {currentYear}</h3>
-        <button onClick={nextMonth} disabled={disabled}>›</button>
+        <button type="button" onClick={nextMonth} disabled={disabled}>›</button>
       </div>
 
       <div className="calendar-grid">
