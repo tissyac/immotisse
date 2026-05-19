@@ -504,8 +504,8 @@ function PromoterDashboard() {
     area: form.area ? Number(form.area) : undefined,
     floor: form.floor ? Number(form.floor) : undefined,
     facadeCount: form.facadeCount ? Number(form.facadeCount) : undefined,
-    apartmentTypes: form.apartmentTypes ? form.apartmentTypes.split(',').map((item) => item.trim()).filter(Boolean) : [],
-    equipment: form.equipment ? form.equipment.split(',').map((item) => item.trim()).filter(Boolean) : [],
+    apartmentTypes: form.apartmentTypes ? form.apartmentTypes.split(/[,\n]+/).map((item) => item.trim()).filter(Boolean) : [],
+    equipment: form.equipment ? form.equipment.split(/[,\n]+/).map((item) => item.trim()).filter(Boolean) : [],
     availabilityCalendar: Array.isArray(form.availabilityCalendar) ? form.availabilityCalendar : [],
     viabilise: normalizeBoolean(form.viabilise),
     changeable: normalizeBoolean(form.changeable),
@@ -1096,22 +1096,14 @@ function PromoterDashboard() {
                         <div className="form-grid">
                           <div className="form-group required">
                             <label>Type de bien *</label>
-                            <select
+                            <textarea
+                              rows="2"
                               value={form.propertyType}
                               onChange={changeField('propertyType')}
+                              placeholder="Ex: Appartement T3, Duplex, Bureau à étage..."
                               required
-                            >
-                              <option value="">-- Sélectionnez le type --</option>
-                              <option value="appartement">Appartement</option>
-                              <option value="maison">Maison</option>
-                              <option value="villa">Villa</option>
-                              <option value="bureau">Bureau</option>
-                              <option value="local_commercial">Local commercial</option>
-                              <option value="studio">Studio</option>
-                              <option value="duplex">Duplex</option>
-                              <option value="autre">Autre</option>
-                            </select>
-                            <small>Choisissez le type de bien immobilier.</small>
+                            />
+                            <small>Décrivez le type de bien (texte libre, retours à la ligne autorisés).</small>
                           </div>
                           <div className="form-group required">
                             <label>Avances demandées *</label>
@@ -1162,39 +1154,32 @@ function PromoterDashboard() {
 
                       <div className="form-section">
                         <h4>🏠 Type de bien</h4>
-                        <div className="form-group required">
-                          <label>Type de bien *</label>
-                          <select
-                            value={form.propertyType}
-                            onChange={changeField('propertyType')}
-                            required
-                          >
-                            <option value="">-- Sélectionnez --</option>
-                            <option value="appartement">Appartement</option>
-                            <option value="studio">Studio</option>
-                            <option value="villa">Villa</option>
-                            <option value="maison">Maison</option>
-                            <option value="local_commercial">Local commercial</option>
-                            <option value="duplex">Duplex</option>
-                            <option value="autre">Autre</option>
-                          </select>
-                          <small>Choisissez le type de bien pour la courte durée.</small>
-                        </div>
+                          <div className="form-group required">
+                            <label>Type de bien *</label>
+                            <textarea
+                              rows="2"
+                              value={form.propertyType}
+                              onChange={changeField('propertyType')}
+                              placeholder="Ex: Appartement meublé, Studio avec balcon, Villa 3 chambres"
+                              required
+                            />
+                            <small>Décrivez le type de bien (texte libre, retours à la ligne autorisés).</small>
+                          </div>
                       </div>
 
                       <div className="form-section">
                         <h4>🛋️ Équipements</h4>
-                        <div className="form-group required">
-                          <label>Équipements *</label>
-                          <input
-                            type="text"
-                            value={form.equipment}
-                            onChange={changeField('equipment')}
-                            placeholder="Ex: Wi-Fi, climatisation, kitchenette"
-                            required
-                          />
-                          <small>Listez les équipements séparés par des virgules.</small>
-                        </div>
+                          <div className="form-group required">
+                            <label>Équipements *</label>
+                            <textarea
+                              rows="3"
+                              value={form.equipment}
+                              onChange={changeField('equipment')}
+                              placeholder="Ex: Wi-Fi\nClimatisation\nKitchenette\nMachine à laver"
+                              required
+                            />
+                            <small>Listez les équipements. Vous pouvez séparer par virgules ou sauts de ligne.</small>
+                          </div>
                       </div>
 
                       <div className="form-section">
