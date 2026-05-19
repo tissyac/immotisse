@@ -20,7 +20,7 @@ function Home() {
   const navigate = useNavigate();
   const [counts, setCounts] = useState({ promotion: 0, vente: 0, location: 0 });
   const [recentOffers, setRecentOffers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState('');
   const [searchFilters, setSearchFilters] = useState({
     type: '',
@@ -34,10 +34,10 @@ function Home() {
 
   const loadData = async () => {
     try {
-      setLoading(true);
+      setLoadingData(true);
       setError('');
 
-      // Charger les comptes par catégorie
+      // Charger les comptes par catégorie et les offres récentes
       const response = await fetch(`${API_URL}/offers?status=approved&limit=50`, { cache: 'no-store' });
       const data = await response.json();
       if (!data.offers) {
@@ -52,7 +52,6 @@ function Home() {
       };
       setCounts(grouped);
 
-      // Charger les 6 offres les plus récentes
       const recent = data.offers
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 6);
@@ -62,7 +61,7 @@ function Home() {
       console.error(err);
       setError('Erreur lors du chargement des données.');
     } finally {
-      setLoading(false);
+      setLoadingData(false);
     }
   };
 
@@ -75,14 +74,6 @@ function Home() {
 
     navigate(`/category/search?${params.toString()}`);
   };
-
-  if (loading) {
-    return (
-      <div className="section">
-        <div className="loading">Chargement...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="home-page">
@@ -160,7 +151,9 @@ function Home() {
                   <h3 style={{color: cat.color}}>{cat.label}</h3>
                   <p>{cat.description}</p>
                   <div className="category-stats">
-                    <span className="offer-count">{counts[cat.value] || 0} offres disponibles</span>
+                    <span className="offer-count">
+                      {loadingData ? '...' : `${counts[cat.value] || 0} offres disponibles`}
+                    </span>
                     <span className="category-btn" style={{backgroundColor: cat.color}}>Voir les offres</span>
                   </div>
                 </div>
@@ -175,8 +168,10 @@ function Home() {
         <div className="section-container">
           <h2>Offres récentes</h2>
           <div className="recent-offers-grid">
-            {loading ? (
+            {loadingData ? (
               <div className="loading">Chargement des offres...</div>
+            ) : recentOffers.length === 0 ? (
+              <div className="loading">Aucune offre récente disponible.</div>
             ) : (
               recentOffers.map((offer) => (
                 <div key={offer._id} className="recent-offer-card">
