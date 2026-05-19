@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+
 const categories = [
   { label: 'Vente', value: 'vente', icon: '🏠', color: '#f48500', description: 'Biens immobiliers à vendre' },
   { label: 'Location', value: 'location', icon: '🏢', color: '#f48500', description: 'Locations immobilières' },
@@ -35,7 +37,7 @@ function Home() {
       setError('');
 
       // Charger les comptes par catégorie
-      const response = await fetch('https://immotisse.onrender.com/offers?status=approved&limit=50', { cache: 'force-cache' });
+      const response = await fetch(`${API_URL}/offers?status=approved&limit=50`, { cache: 'no-store' });
       const data = await response.json();
       if (!data.offers) {
         setError('Impossible de charger les données.');

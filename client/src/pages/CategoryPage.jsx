@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import './CategoryPage.css';
 
+const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+
 const categoryLabels = {
   promotion: 'Promotion',
   vente: 'Vente Particulier',
@@ -76,7 +78,7 @@ function CategoryPage() {
       if (params.city) queryString += `&city=${params.city}`;
       if (params.search) queryString += `&search=${params.search}`;
       
-      const response = await fetch(`https://immotisse.onrender.com/offers?${queryString}&limit=50`);
+      const response = await fetch(`${API_URL}/offers?${queryString}&limit=50`, { cache: 'no-store' });
       const data = await response.json();
       
       if (!data.offers) {
@@ -100,7 +102,8 @@ function CategoryPage() {
       setError('');
       const subCategoryQuery = (category === 'vente' || category === 'location') && subcategory ? `&subCategory=${subcategory}` : '';
       const response = await fetch(
-        `https://immotisse.onrender.com/offers?status=approved&mainCategory=${category}${subCategoryQuery}&limit=50`
+        `${API_URL}/offers?status=approved&mainCategory=${category}${subCategoryQuery}&limit=50`,
+        { cache: 'no-store' }
       );
       const data = await response.json();
       if (!data.offers) {
