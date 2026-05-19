@@ -9,6 +9,12 @@ const categories = [
   { label: 'Promotion', value: 'promotion', icon: '🏗️', color: '#f48500', description: 'Promotions immobilières' }
 ];
 
+const categoryLabels = {
+  vente: 'Vente',
+  location: 'Location',
+  promotion: 'Promotion'
+};
+
 const formatOfferImageUrl = (src) => {
   if (!src) return '';
   if (src.startsWith('http://') || src.startsWith('https://')) return src;
@@ -184,28 +190,8 @@ function Home() {
                   </div>
                   <div className="offer-details">
                     <div className="offer-price">💰 {offer.price ? `${offer.price.toLocaleString()} DA` : 'Prix sur demande'}</div>
-                    
-                    {/* Affichage simplifié pour les maisons, locaux commerciaux et location longue durée */}
-                    {(offer.mainCategory === 'vente' && (offer.subCategory === 'maison' || offer.subCategory === 'locaux_commerciaux')) ||
-                     (offer.mainCategory === 'location' && offer.subCategory === 'longue_duree') ? (
-                      <>
-                        <div className="offer-address">📍 {offer.address || offer.city || 'Adresse non spécifiée'}</div>
-                        <div className="offer-description">📝 {offer.description ? offer.description.slice(0, 50) + '...' : 'Description non disponible'}</div>
-                        {offer.subCategory === 'maison' ? (
-                          <div className="offer-type">🏠 {offer.propertyType || 'Type non spécifié'}</div>
-                        ) : offer.subCategory === 'locaux_commerciaux' ? (
-                          <div className="offer-type">🏪 {offer.area ? `${offer.area} m²` : 'Superficie non spécifiée'}</div>
-                        ) : offer.mainCategory === 'location' && offer.subCategory === 'longue_duree' ? (
-                          <div className="offer-type">🏠 {offer.propertyType || 'Type non spécifié'}</div>
-                        ) : null}
-                      </>
-                    ) : (
-                      <>
-                        <div className="offer-address">📍 {offer.address || offer.city || 'Adresse non spécifiée'}</div>
-                        <div className="offer-type">🏠 {offer.propertyType || 'Type non spécifié'}</div>
-                      </>
-                    )}
-                    
+                    <div className="offer-address">📍 {offer.address || offer.city || 'Adresse non spécifiée'}</div>
+                    <div className="offer-category">{categoryLabels[offer.mainCategory] || 'Autre'}</div>
                     <Link to={`/offer/${offer._id}`} className="view-more-btn">Voir plus</Link>
                   </div>
                 </div>
