@@ -138,7 +138,7 @@ function OfferCard({ offer }) {
                 <h4>Équipements:</h4>
                 <div className="equipment-list">
                   {offer.equipment.map((item, index) => (
-                    <span key={index} className="equipment-item">{item}</span>
+                    <div key={index} className="equipment-item">{item}</div>
                   ))}
                 </div>
               </div>

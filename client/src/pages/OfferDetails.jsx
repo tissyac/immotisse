@@ -325,7 +325,7 @@ function OfferDetails() {
                 <div className="detail-card-icon">🛋️</div>
                 <div>
                   <div className="detail-card-label">Équipements</div>
-                  <div className="detail-card-value" style={{ whiteSpace: 'pre-wrap' }}>{Array.isArray(offer.equipment) ? offer.equipment.join(', ') : offer.equipment}</div>
+                  <div className="detail-card-value" style={{ whiteSpace: 'pre-wrap' }}>{Array.isArray(offer.equipment) ? offer.equipment.join('\n') : offer.equipment}</div>
                 </div>
               </div>
             )}
@@ -837,7 +837,7 @@ function OfferDetails() {
               {offer.description && offer.subCategory !== 'longue_duree' && (
                 <section className="section description-section">
                   <h2>📝 Description</h2>
-                  <p className="description-text">{offer.description}</p>
+                  <p className="description-text" style={{ whiteSpace: 'pre-line' }}>{offer.description}</p>
                 </section>
               )}
 
