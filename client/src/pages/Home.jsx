@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
 
@@ -17,6 +17,7 @@ const formatOfferImageUrl = (src) => {
 };
 
 function Home() {
+  const navigate = useNavigate();
   const [counts, setCounts] = useState({ promotion: 0, vente: 0, location: 0 });
   const [recentOffers, setRecentOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,13 +68,12 @@ function Home() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Implémenter la recherche
     const params = new URLSearchParams();
     if (searchFilters.type) params.append('mainCategory', searchFilters.type);
     if (searchFilters.address) params.append('city', searchFilters.address);
     if (searchFilters.keyword) params.append('search', searchFilters.keyword);
 
-    window.location.href = `/category/search?${params.toString()}`;
+    navigate(`/category/search?${params.toString()}`);
   };
 
   if (loading) {

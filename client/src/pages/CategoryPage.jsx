@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import './CategoryPage.css';
 
 const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
@@ -38,6 +38,7 @@ const formatOfferImageUrl = (src) => {
 
 function CategoryPage() {
   const { category, subcategory } = useParams();
+  const location = useLocation();
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -45,9 +46,9 @@ function CategoryPage() {
   const [searchParams, setSearchParams] = useState({});
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const isSearchRoute = window.location.pathname === '/category/search';
-    
+    const urlParams = new URLSearchParams(location.search);
+    const isSearchRoute = location.pathname === '/category/search';
+
     if (isSearchRoute) {
       setIsSearch(true);
       const params = {};
@@ -66,7 +67,7 @@ function CategoryPage() {
       }
       loadOffers();
     }
-  }, [category, subcategory]);
+  }, [category, subcategory, location]);
 
   const loadSearchResults = async (params) => {
     try {
