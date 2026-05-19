@@ -40,8 +40,8 @@ function OfferCard({ offer }) {
         </div>
 
         {!showDetails ? (
-          <div className="offer-preview">
-            <p className="offer-description">
+            <div className="offer-preview">
+            <p className="offer-description" style={{ whiteSpace: 'pre-wrap' }}>
               {offer.description?.slice(0, 80) || 'Description non disponible'}...
             </p>
             <button
@@ -61,7 +61,7 @@ function OfferCard({ offer }) {
                   {offer.description && (
                     <div className="info-item">
                       <span className="info-label">Description:</span>
-                      <span className="info-value">{offer.description.length > 100 ? `${offer.description.substring(0, 100)}...` : offer.description}</span>
+                      <span className="info-value" style={{ whiteSpace: 'pre-wrap' }}>{offer.description.length > 100 ? `${offer.description.substring(0, 100)}...` : offer.description}</span>
                     </div>
                   )}
 
@@ -129,7 +129,7 @@ function OfferCard({ offer }) {
             {offer.description && (
               <div className="offer-full-description">
                 <h4>Description complète:</h4>
-                <p>{offer.description}</p>
+                <p style={{ whiteSpace: 'pre-wrap' }}>{offer.description}</p>
               </div>
             )}
 

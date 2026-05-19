@@ -325,7 +325,7 @@ function OfferDetails() {
                 <div className="detail-card-icon">🛋️</div>
                 <div>
                   <div className="detail-card-label">Équipements</div>
-                  <div className="detail-card-value">{Array.isArray(offer.equipment) ? offer.equipment.join(', ') : offer.equipment}</div>
+                  <div className="detail-card-value" style={{ whiteSpace: 'pre-wrap' }}>{Array.isArray(offer.equipment) ? offer.equipment.join(', ') : offer.equipment}</div>
                 </div>
               </div>
             )}
@@ -339,7 +339,7 @@ function OfferDetails() {
                 <div className="detail-card-icon">📝</div>
                 <div>
                   <div className="detail-card-label">Description</div>
-                  <div className="detail-card-value">{offer.description}</div>
+                  <div className="detail-card-value" style={{ whiteSpace: 'pre-wrap' }}>{offer.description}</div>
                 </div>
               </div>
             )}
@@ -349,7 +349,7 @@ function OfferDetails() {
                 <div className="detail-card-icon">🏠</div>
                 <div>
                   <div className="detail-card-label">Type de bien</div>
-                  <div className="detail-card-value">{offer.propertyType}</div>
+                  <div className="detail-card-value" style={{ whiteSpace: 'pre-wrap' }}>{offer.propertyType}</div>
                 </div>
               </div>
             )}
@@ -359,7 +359,7 @@ function OfferDetails() {
                 <div className="detail-card-icon">💰</div>
                 <div>
                   <div className="detail-card-label">Avances demandées</div>
-                  <div className="detail-card-value">{offer.advance}</div>
+                  <div className="detail-card-value" style={{ whiteSpace: 'pre-wrap' }}>{offer.advance}</div>
                 </div>
               </div>
             )}
