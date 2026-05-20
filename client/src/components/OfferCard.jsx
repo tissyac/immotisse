@@ -17,6 +17,7 @@ function OfferCard({ offer }) {
           src={getMainImage()}
           alt={offer.title}
           className="offer-image"
+          loading="lazy"
           onError={(e) => {
             e.target.src = 'https://via.placeholder.com/400x240/334155/ffffff?text=Image+non+disponible';
           }}

@@ -79,7 +79,7 @@ function CategoryPage() {
       if (params.city) queryString += `&city=${params.city}`;
       if (params.search) queryString += `&search=${params.search}`;
       
-      const response = await fetch(`${API_URL}/offers?${queryString}&limit=50`, { cache: 'no-store' });
+      const response = await fetch(`${API_URL}/offers?${queryString}&limit=20`, { cache: 'no-store' });
       const data = await response.json();
       
       if (!data.offers) {
@@ -103,7 +103,7 @@ function CategoryPage() {
       setError('');
       const subCategoryQuery = (category === 'vente' || category === 'location') && subcategory ? `&subCategory=${subcategory}` : '';
       const response = await fetch(
-        `${API_URL}/offers?status=approved&mainCategory=${category}${subCategoryQuery}&limit=50`,
+        `${API_URL}/offers?status=approved&mainCategory=${category}${subCategoryQuery}&limit=20`,
         { cache: 'no-store' }
       );
       const data = await response.json();
@@ -209,7 +209,7 @@ function CategoryPage() {
                     <Link key={offer._id} to={`/offer/${offer._id}`} className="offer-card">
                       <div className="offer-image">
                         {offer.images && offer.images.length > 0 ? (
-                          <img src={formatOfferImageUrl(offer.images[0])} alt={offer.title} />
+                          <img src={formatOfferImageUrl(offer.images[0])} alt={offer.title} loading="lazy" />
                         ) : (
                           <div className="no-image">📷</div>
                         )}
