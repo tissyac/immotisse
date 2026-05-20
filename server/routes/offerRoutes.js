@@ -40,10 +40,10 @@ router.get('/', async (req, res) => {
     
     // Recherche texte
     if (req.query.search) {
-      filters.$or = [
-        { title: new RegExp(req.query.search, 'i') },
-        { description: new RegExp(req.query.search, 'i') }
-      ];
+      const searchTerm = String(req.query.search || '').trim();
+      if (searchTerm.length > 0) {
+        filters.$text = { $search: searchTerm };
+      }
     }
     
     // Pagination
@@ -56,13 +56,16 @@ router.get('/', async (req, res) => {
     const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
     const sort = { [sortBy]: sortOrder };
     
-    const offers = await Offer.find(filters)
-      .populate('user', 'companyName companyEmail companyPhone')
-      .sort(sort)
-      .skip(skip)
-      .limit(limit);
-    
-    const total = await Offer.countDocuments(filters);
+    const projection = 'title description address city price images mainCategory subCategory area elevator parking createdAt';
+    const [offers, total] = await Promise.all([
+      Offer.find(filters)
+        .select(projection)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Offer.countDocuments(filters)
+    ]);
     
     res.json({
       offers,
@@ -152,13 +155,15 @@ router.get('/admin/all', adminMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
     
-    const offers = await Offer.find(filters)
-      .populate('user', 'companyName companyEmail')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-    
-    const total = await Offer.countDocuments(filters);
+    const [offers, total] = await Promise.all([
+      Offer.find(filters)
+        .populate('user', 'companyName companyEmail')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Offer.countDocuments(filters)
+    ]);
     
     res.json({
       offers,
@@ -212,12 +217,14 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
     
-    const offers = await Offer.find({ user: req.params.userId })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-    
-    const total = await Offer.countDocuments({ user: req.params.userId });
+    const [offers, total] = await Promise.all([
+      Offer.find({ user: req.params.userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Offer.countDocuments({ user: req.params.userId })
+    ]);
     
     res.json({
       offers,

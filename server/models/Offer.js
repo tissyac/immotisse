@@ -48,5 +48,8 @@ const offerSchema = new mongoose.Schema({
 
 offerSchema.index({ status: 1, isPublished: 1, mainCategory: 1 });
 offerSchema.index({ createdAt: -1 });
+offerSchema.index({ city: 1 });
+offerSchema.index({ address: 1 });
+offerSchema.index({ title: 'text', description: 'text' });
 
 module.exports = mongoose.model('Offer', offerSchema);
