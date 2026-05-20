@@ -43,26 +43,25 @@ function Home() {
       setLoadingData(true);
       setError('');
 
-      // Charger les comptes par catégorie et les offres récentes
-      const response = await fetch(`${API_URL}/offers?status=approved&limit=50`, { cache: 'no-store' });
-      const data = await response.json();
-      if (!data.offers) {
-        setError('Impossible de charger les données.');
+      const [offersResponse, countsResponse] = await Promise.all([
+        fetch(`${API_URL}/offers?status=approved&limit=6&sortBy=createdAt&sortOrder=desc`, { cache: 'no-store' }),
+        fetch(`${API_URL}/offers/stats`, { cache: 'no-store' })
+      ]);
+
+      const offersData = await offersResponse.json();
+      const countsData = await countsResponse.json();
+
+      if (!offersData.offers) {
+        setError('Impossible de charger les offres.');
         return;
       }
 
-      const grouped = {
-        promotion: data.offers.filter((offer) => offer.mainCategory === 'promotion').length,
-        vente: data.offers.filter((offer) => offer.mainCategory === 'vente').length,
-        location: data.offers.filter((offer) => offer.mainCategory === 'location').length
-      };
-      setCounts(grouped);
-
-      const recent = data.offers
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 6);
-      setRecentOffers(recent);
-
+      setCounts({
+        promotion: countsData.promotion || 0,
+        vente: countsData.vente || 0,
+        location: countsData.location || 0
+      });
+      setRecentOffers(offersData.offers || []);
     } catch (err) {
       console.error(err);
       setError('Erreur lors du chargement des données.');

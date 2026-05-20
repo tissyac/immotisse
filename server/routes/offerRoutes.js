@@ -80,6 +80,31 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET statistiques publiques des offres approuvées par catégorie
+router.get('/stats', async (req, res) => {
+  try {
+    const byCategoryArray = await Offer.aggregate([
+      { $match: { status: 'approved', isPublished: true } },
+      { $group: { _id: '$mainCategory', count: { $sum: 1 } } }
+    ]);
+
+    const counts = {
+      promotion: 0,
+      vente: 0,
+      location: 0
+    };
+
+    byCategoryArray.forEach((item) => {
+      if (item._id) counts[item._id] = item.count;
+    });
+
+    res.json(counts);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
 // GET toutes les offres (admin) - avec pagination et filtres
 router.get('/admin/all', adminMiddleware, async (req, res) => {
   try {
