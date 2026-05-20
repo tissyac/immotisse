@@ -46,4 +46,7 @@ const offerSchema = new mongoose.Schema({
   adminNote: String,
 }, { timestamps: true });
 
+offerSchema.index({ status: 1, isPublished: 1, mainCategory: 1 });
+offerSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Offer', offerSchema);

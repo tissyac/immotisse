@@ -105,6 +105,41 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// GET données légères pour la page d'accueil : counts et 6 offres récentes
+router.get('/home', async (req, res) => {
+  try {
+    const filter = { status: 'approved', isPublished: true };
+
+    const countsPromise = Offer.aggregate([
+      { $match: filter },
+      { $group: { _id: '$mainCategory', count: { $sum: 1 } } }
+    ]);
+
+    const offersPromise = Offer.find(filter)
+      .select('title address city price images mainCategory createdAt')
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .lean();
+
+    const [countsArray, offers] = await Promise.all([countsPromise, offersPromise]);
+
+    const counts = {
+      promotion: 0,
+      vente: 0,
+      location: 0
+    };
+
+    countsArray.forEach((item) => {
+      if (item._id) counts[item._id] = item.count;
+    });
+
+    res.json({ counts, offers });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
 // GET toutes les offres (admin) - avec pagination et filtres
 router.get('/admin/all', adminMiddleware, async (req, res) => {
   try {

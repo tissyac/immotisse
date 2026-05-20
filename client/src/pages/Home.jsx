@@ -43,25 +43,20 @@ function Home() {
       setLoadingData(true);
       setError('');
 
-      const [offersResponse, countsResponse] = await Promise.all([
-        fetch(`${API_URL}/offers?status=approved&limit=6&sortBy=createdAt&sortOrder=desc`, { cache: 'no-store' }),
-        fetch(`${API_URL}/offers/stats`, { cache: 'no-store' })
-      ]);
+      const response = await fetch(`${API_URL}/offers/home`, { cache: 'no-store' });
+      const data = await response.json();
 
-      const offersData = await offersResponse.json();
-      const countsData = await countsResponse.json();
-
-      if (!offersData.offers) {
+      if (!data || !data.offers) {
         setError('Impossible de charger les offres.');
         return;
       }
 
       setCounts({
-        promotion: countsData.promotion || 0,
-        vente: countsData.vente || 0,
-        location: countsData.location || 0
+        promotion: data.counts.promotion || 0,
+        vente: data.counts.vente || 0,
+        location: data.counts.location || 0
       });
-      setRecentOffers(offersData.offers || []);
+      setRecentOffers(data.offers);
     } catch (err) {
       console.error(err);
       setError('Erreur lors du chargement des données.');
