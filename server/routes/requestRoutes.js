@@ -80,49 +80,12 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Demande non trouvée" });
     }
 
-    // Vérifier si un utilisateur existe déjà avec cet email avant de créer
-    const existingUserCheck = await User.findOne({ $or: [{ companyEmail: request.companyEmail }, { username: request.companyEmail }] });
-    if (existingUserCheck) {
-      console.log('ℹ️ Utilisateur existe déjà, pas de création:', existingUserCheck._id);
-      request.status = 'approved';
-      request.adminNote = adminNote || 'Approuvée (utilisateur existant)';
-      await request.save();
-
-      // Audit log (sans crash si erreur)
-      try {
-        await logAction('approve', 'request', request._id, req.user?.userId || 'admin', {
-          status: 'approved',
-          notes: request.adminNote
-        });
-      } catch (auditError) {
-        console.warn('⚠️  Erreur audit log (non bloquant):', auditError.message);
-      }
-
-      // Notifier l'utilisateur existant
-      let emailStatus = { success: false, error: 'non envoyé' };
-      try {
-        console.log('📧 [approve] Appel sendExistingUserEmail pour:', existingUserCheck.companyEmail || existingUserCheck.username);
-        emailStatus = await sendExistingUserEmail(existingUserCheck.companyEmail || existingUserCheck.username, existingUserCheck.username || existingUserCheck.companyEmail, request.companyName);
-        console.log('📧 [approve] Résultat sendExistingUserEmail:', emailStatus);
-      } catch (emailError) {
-        console.error('⚠️  [approve] Erreur email existing user notification:', emailError.message, emailError);
-        emailStatus = { success: false, error: emailError.message };
-      }
-
-      return res.json({
-        success: true,
-        message: 'Demande approuvée — utilisateur existant',
-        username: existingUserCheck.username || existingUserCheck.companyEmail,
-        emailStatus
-      });
-    }
-
-    // Générer mot de passe et hash
+    // Générer mot de passe
     const generatedPassword = Math.random().toString(36).slice(-10);
     const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
-    // Préparer les données pour insertion atomique
-    const filter = { $or: [{ companyEmail: request.companyEmail }, { username: request.companyEmail }] };
+    // Toujours créer ou mettre à jour l'utilisateur via upsert
+    const filter = { companyEmail: request.companyEmail };
     const update = {
       $setOnInsert: {
         username: request.companyEmail,
@@ -148,73 +111,55 @@ router.post('/:id/approve', adminMiddleware, async (req, res) => {
     };
 
     try {
-      // Utiliser rawResult pour détecter si l'opération a inséré un document
-      const raw = await User.findOneAndUpdate(filter, update, { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true, rawResult: true });
-      const created = !!(raw && raw.lastErrorObject && raw.lastErrorObject.upserted);
-      let userDoc = raw && raw.value ? raw.value : null;
+      const userResult = await User.findOneAndUpdate(filter, update, { 
+        upsert: true, 
+        returnDocument: 'after', 
+        setDefaultsOnInsert: true 
+      });
 
-      // Fallback: if raw.value undefined, try to fetch the user document directly
+      const userDoc = userResult;
+      
       if (!userDoc) {
-        console.warn('⚠️ [approve] raw.value undefined after upsert, raw:', raw);
-        userDoc = await User.findOne({ $or: [{ companyEmail: request.companyEmail }, { username: request.companyEmail }] });
-      }
-
-      if (!userDoc) {
-        console.error('❌ [approve] Impossible de récupérer le document utilisateur après upsert. raw:', raw);
+        console.error('❌ [approve] Impossible de récupérer le document utilisateur après upsert');
         throw new Error('Utilisateur non récupéré après upsert');
       }
 
-      if (created) {
-        console.log('✅ Utilisateur créé (upsert):', userDoc._id);
-      } else {
-        console.log('ℹ️ Utilisateur déjà existant trouvé après upsert:', userDoc._id);
-      }
+      console.log('✅ Utilisateur traité (créé ou existant):', userDoc._id);
 
       // Mettre à jour la demande
       request.status = 'approved';
-      request.adminNote = adminNote || (created ? 'Approuvée par l\'administration' : 'Approuvée (utilisateur existant)');
+      request.adminNote = adminNote || 'Approuvée par l\'administration';
       await request.save();
       console.log('✅ Demande approuvée');
 
-      // Si utilisateur existant (non créé), notifier en conséquence
-      if (!created) {
-        console.log('📧 [approve] Notifier utilisateur existant via sendExistingUserEmail (en arrière-plan)');
-        // Envoyer l'email EN ARRIÈRE-PLAN (fire and forget, non bloquant)
-        sendExistingUserEmail(userDoc.companyEmail || userDoc.username, userDoc.username || userDoc.companyEmail, request.companyName)
-          .then(emailStatus => console.log('📧 [approve] Email utilisateur existant envoyé:', emailStatus))
-          .catch(emailError => console.error('⚠️  [approve] Erreur email utilisateur existant:', emailError.message));
-        
-        return res.json({ success: true, message: 'Demande approuvée — utilisateur existant', username: userDoc.username || userDoc.companyEmail });
+      // Audit log
+      try {
+        await logAction('approve', 'request', request._id, req.user?.userId || 'admin', {
+          status: 'approved',
+          notes: request.adminNote
+        });
+        console.log('✅ Audit log enregistré');
+      } catch (auditError) {
+        console.warn('⚠️  Erreur audit log (non bloquant):', auditError.message);
       }
 
-    } catch (saveError) {
-      console.error('❌ Impossible de créer ou récupérer l\'utilisateur:', saveError);
-      return res.status(500).json({ success: false, message: 'Erreur lors de la création ou récupération de l\'utilisateur', error: saveError.message });
-    }
+      // Toujours envoyer l'email d'approbation avec username et password en arrière-plan
+      console.log('📧 [approve] Envoi email approbation en arrière-plan à:', request.companyEmail);
+      sendApprovalEmail(request.companyEmail, request.companyEmail, generatedPassword, request.companyName)
+        .then(emailStatus => console.log('✅ [approve] Email d\'approbation envoyé:', emailStatus))
+        .catch(emailError => console.error('⚠️  [approve] Erreur email approbation:', emailError.message));
 
-    // Audit log (sans crash si erreur)
-    try {
-      await logAction('approve', 'request', request._id, req.user?.userId || 'admin', {
-        status: 'approved',
-        notes: request.adminNote
+      res.json({
+        success: true,
+        message: "Demande approuvée et utilisateur créé/activé",
+        username: request.companyEmail,
+        password: generatedPassword
       });
-      console.log('✅ Audit log enregistré');
-    } catch (auditError) {
-      console.warn('⚠️  Erreur audit log (non bloquant):', auditError.message);
+
+    } catch (saveError) {
+      console.error('❌ Impossible de créer ou mettre à jour l\'utilisateur:', saveError);
+      return res.status(500).json({ success: false, message: 'Erreur lors de la création ou mise à jour de l\'utilisateur', error: saveError.message });
     }
-
-    // Envoyer un email EN ARRIÈRE-PLAN (fire and forget, non bloquant)
-    console.log('📧 [approve] Envoi email approbation en arrière-plan à:', request.companyEmail);
-    sendApprovalEmail(request.companyEmail, request.companyEmail, generatedPassword, request.companyName)
-      .then(emailStatus => console.log('✅ [approve] Email d\'approbation envoyé:', emailStatus))
-      .catch(emailError => console.error('⚠️  [approve] Erreur email approbation:', emailError.message));
-
-    res.json({
-      success: true,
-      message: "Demande approuvée et utilisateur créé",
-      username: request.companyEmail,
-      password: generatedPassword
-    });
 
   } catch (error) {
     console.error('❌ Erreur approbation:', error);
