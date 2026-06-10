@@ -257,7 +257,11 @@ function Home() {
               <span className="contact-icon">📱</span>
               <div>
                 <div className="contact-item-label">Mobile</div>
-                <div>0770 38 37 43</div>
+                <div>
+                  0770 38 37 43
+                  <br />0770300642
+                  <br />0770679495
+                </div>
               </div>
             </div>
             <div className="contact-item">
@@ -278,7 +282,11 @@ function Home() {
               <span className="contact-icon">✉️</span>
               <div>
                 <div className="contact-item-label">Email</div>
-                <div><a href="mailto:immotisseimo06@gmail.com">immotisseimo06@gmail.com</a></div>
+                <div>
+                  <a href="mailto:immotisseimo06@gmail.com">immotisseimo06@gmail.com</a>
+                  <br />
+                  <a href="mailto:Immoimmotisse@gmail.com">Immoimmotisse@gmail.com</a>
+                </div>
               </div>
             </div>
           </div>
