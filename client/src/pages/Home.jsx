@@ -259,8 +259,8 @@ function Home() {
                 <div className="contact-item-label">Mobile</div>
                 <div>
                   0770 38 37 43
-                  <br />0770300642
-                  <br />0770679495
+                  <br />0770 30 06 42
+                  <br />0770 67 94 95
                 </div>
               </div>
             </div>
