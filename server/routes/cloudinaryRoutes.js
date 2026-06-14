@@ -52,6 +52,7 @@ router.get('/sign', authMiddleware, (req, res) => {
     console.log('  - signature:', signature);
     console.log('  - resourceType envoyé:', resourceType);
 
+    const maxFileSize = String(1024 * 1024 * 1024); // 1 GB
     res.json({
       apiKey,
       cloudName,
@@ -59,7 +60,8 @@ router.get('/sign', authMiddleware, (req, res) => {
       signature,
       folder: 'immotisse-uploads',
       resourceType,
-      unsigned: false
+      unsigned: false,
+      max_file_size: maxFileSize
     });
   } catch (error) {
     console.error('Erreur signature Cloudinary :', error);
@@ -91,7 +93,9 @@ router.post('/sign', authMiddleware, express.json(), (req, res) => {
     const filtered = {};
     Object.keys(paramsToSign || {}).forEach((k) => {
       const v = paramsToSign[k];
-      if (v !== undefined && v !== null && String(v) !== '') filtered[k] = String(v);
+      if (v !== undefined && v !== null && String(v) !== '' && k !== 'max_file_size') {
+        filtered[k] = String(v);
+      }
     });
 
     // Si aucun param fourni, refuse
@@ -113,12 +117,16 @@ router.post('/sign', authMiddleware, express.json(), (req, res) => {
     });
 
     // Retourner params signés (sans max_file_size) + signature séparé + max_file_size séparé
+    const maxFileSize = String(1024 * 1024 * 1024); // 1 GB
     res.json({
       apiKey,
       cloudName,
       signature,
-      upload_params: filtered,  // Seulement params signés du widget
-      max_file_size: String(1024 * 1024 * 1024)  // 1 GB séparé, non signé
+      upload_params: {
+        ...filtered,
+        max_file_size: maxFileSize
+      },
+      max_file_size: maxFileSize
     });
   } catch (error) {
     console.error('Erreur signature Cloudinary (POST):', error);
