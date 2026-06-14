@@ -54,7 +54,7 @@ if (isCloudinaryConfigured) {
 
   upload = multer({ 
     storage: storage,
-    limits: { fileSize: 1024 * 1024 * 500 } // 500MB
+    limits: { fileSize: 1024 * 1024 * 1024 } // 1GB
   });
   console.log('📤 Upload: Système de fichiers local');
 }
